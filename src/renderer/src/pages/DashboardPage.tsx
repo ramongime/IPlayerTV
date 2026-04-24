@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AccountModal } from '@/components/AccountModal';
-import { CategoryList } from '@/components/CategoryList';
-import { InspectModal } from '@/components/InspectModal';
-import { SettingsModal } from '@/components/SettingsModal';
-import { Sidebar } from '@/components/Sidebar';
-import { StreamGrid } from '@/components/StreamGrid';
-import { TopBar } from '@/components/TopBar';
-import type { Category, Episode, Favorite, HistoryItem, ShelfView, StreamItem } from '@/lib/types';
+import { AccountModal } from '@/features/auth/AccountModal';
+import { CategoryList } from '@/features/catalog/CategoryList';
+import { InspectModal } from '@/features/player/InspectModal';
+import { SettingsModal } from '@/features/player/SettingsModal';
+import { Sidebar } from '@/features/auth/Sidebar';
+import { StreamGrid } from '@/features/catalog/StreamGrid';
+import { TopBar } from '@/features/catalog/TopBar';
+import type { Category, Episode, Favorite, HistoryItem, ShelfView, StreamItem } from '@shared/domain';
 import { useAppStore } from '@/store/useAppStore';
 
 export function DashboardPage() {

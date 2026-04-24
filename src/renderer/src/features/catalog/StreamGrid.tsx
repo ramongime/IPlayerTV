@@ -1,4 +1,4 @@
-import type { Favorite, StreamItem, ContentType } from '@/lib/types';
+import type { Favorite, StreamItem, ContentType } from '@shared/domain';
 
 interface StreamGridProps {
   contentType: ContentType;

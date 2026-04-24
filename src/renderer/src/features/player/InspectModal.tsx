@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ContentType, EpgProgramme, Episode, StreamItem } from '@/lib/types';
+import type { ContentType, EpgProgramme, Episode, StreamItem } from '@shared/domain';
 
 interface InspectModalProps {
   open: boolean;

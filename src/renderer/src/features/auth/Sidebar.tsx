@@ -1,4 +1,4 @@
-import type { Account, ContentType } from '@/lib/types';
+import type { Account, ContentType } from '@shared/domain';
 
 interface SidebarProps {
   accounts: Account[];

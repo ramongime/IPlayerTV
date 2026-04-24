@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
-import { registerIpc } from './ipc/register-ipc';
+import { registerControllers } from './presentation/controllers';
 
 function createWindow() {
   const window = new BrowserWindow({
@@ -27,7 +27,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  registerIpc();
+  registerControllers();
   createWindow();
 
   app.on('activate', () => {

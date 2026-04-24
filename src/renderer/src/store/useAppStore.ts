@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Account, ContentType } from '@/lib/types';
+import type { Account, ContentType } from '@shared/domain';
 
 interface AppState {
   accounts: Account[];

@@ -12,10 +12,15 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
+    "baseUrl": ".",
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["src/renderer/src/*"],
+      "@shared/*": ["src/shared/*"]
+    }
   },
-  "include": ["src/renderer/src"],
+  "include": ["src/renderer/src", "src/shared"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

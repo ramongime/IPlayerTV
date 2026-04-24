@@ -1,4 +1,5 @@
 export type ContentType = 'live' | 'movie' | 'series';
+export type ShelfView = 'catalog' | 'favorites' | 'history';
 
 export interface Account {
   id: string;

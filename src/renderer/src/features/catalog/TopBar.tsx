@@ -1,4 +1,4 @@
-import type { ContentType, ShelfView } from '@/lib/types';
+import type { ContentType, ShelfView } from '@shared/domain';
 
 interface TopBarProps {
   search: string;

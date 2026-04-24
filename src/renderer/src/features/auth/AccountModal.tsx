@@ -15,13 +15,21 @@ interface AccountModalProps {
 }
 
 export function AccountModal({ open, onClose, onSave }: AccountModalProps) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    server: string;
+    username: string;
+    password: string;
+    output: 'm3u8' | 'ts';
+    player: 'vlc' | 'mpv' | 'browser';
+    userAgent: string;
+  }>({
     name: '',
     server: '',
     username: '',
     password: '',
-    output: 'm3u8' as const,
-    player: 'vlc' as const,
+    output: 'm3u8',
+    player: 'vlc',
     userAgent: ''
   });
   const [saving, setSaving] = useState(false);

@@ -19,7 +19,7 @@ const store = new Store<AppSettings>({
   }
 });
 
-export class SettingsService {
+export class SettingsProvider {
   get() {
     return store.store;
   }

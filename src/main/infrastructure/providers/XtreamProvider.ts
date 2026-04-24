@@ -1,17 +1,8 @@
-import type {
-  Account,
-  Category,
-  ContentType,
-  EpgProgramme,
-  Episode,
-  SeriesInfoResponse,
-  StreamItem,
-  XtreamAuthResponse
-} from '../types';
-import { SettingsService } from './settings-service';
+import type { Account, Category, ContentType, EpgProgramme, Episode, SeriesInfoResponse, StreamItem, XtreamAuthResponse } from '@shared/domain';
+import type { IXtreamProvider } from '../../core/services/IXtreamProvider';
 
-export class XtreamService {
-  private settingsService = new SettingsService();
+export class XtreamProvider implements IXtreamProvider {
+  constructor(private getTimeoutMs: () => number) {}
 
   async authenticate(account: Pick<Account, 'server' | 'username' | 'password' | 'userAgent'>) {
     const data = await this.request<XtreamAuthResponse>(account, {
@@ -92,7 +83,7 @@ export class XtreamService {
     return data.epg_listings ?? [];
   }
 
-  buildStreamCandidates(account: Account, contentType: ContentType, streamId: number, extension?: string) {
+  private buildStreamCandidates(account: Account, contentType: ContentType, streamId: number, extension?: string) {
     const server = account.server.replace(/\/$/, '');
     const exts = contentType === 'live'
       ? Array.from(new Set([account.output, 'm3u8', 'ts']))
@@ -113,7 +104,7 @@ export class XtreamService {
   }
 
   async resolveBestStreamUrl(account: Account, contentType: ContentType, streamId: number, extension?: string) {
-    const timeoutMs = this.settingsService.get().stream.probeTimeoutMs;
+    const timeoutMs = this.getTimeoutMs();
     const candidates = this.buildStreamCandidates(account, contentType, streamId, extension);
 
     for (const url of candidates) {

@@ -1,4 +1,4 @@
-import type { Category } from '@/lib/types';
+import type { Category } from '@shared/domain';
 
 interface CategoryListProps {
   categories: Category[];
