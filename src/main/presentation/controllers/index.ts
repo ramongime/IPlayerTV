@@ -12,7 +12,7 @@ export function registerControllers() {
   const accountsRepo = new AccountRepository();
   const favoritesRepo = new FavoriteRepository();
   const historyRepo = new HistoryRepository();
-  
+
   const xtreamProvider = new XtreamProvider(() => settingsProvider.get().stream.probeTimeoutMs);
   const playerProvider = new DesktopPlayerProvider(() => settingsProvider.get());
 
@@ -30,11 +30,17 @@ export function registerControllers() {
   ipcMain.handle('history:add', (_, payload) => historyRepo.add(payload));
 
   // --- Xtream ---
+  const resolveAccount = (accountId: string) => {
+    const account = accountsRepo.list().find(a => a.id === accountId);
+    if (!account) throw new Error(`Account not found: ${accountId}`);
+    return account;
+  };
+
   ipcMain.handle('xtream:authenticate', (_, account) => xtreamProvider.authenticate(account));
-  ipcMain.handle('xtream:categories', (_, account, contentType: ContentType) => xtreamProvider.categories(account, contentType));
-  ipcMain.handle('xtream:streams', (_, account, contentType: ContentType, categoryId?: string) => xtreamProvider.streams(account, contentType, categoryId));
-  ipcMain.handle('xtream:seriesEpisodes', (_, account, seriesId: number) => xtreamProvider.seriesEpisodes(account, seriesId));
-  ipcMain.handle('xtream:epg', (_, account, streamId: number, limit?: number) => xtreamProvider.shortEpg(account, streamId, limit));
+  ipcMain.handle('xtream:categories', (_, accountId: string, contentType: ContentType) => xtreamProvider.categories(resolveAccount(accountId), contentType));
+  ipcMain.handle('xtream:streams', (_, accountId: string, contentType: ContentType, categoryId?: string) => xtreamProvider.streams(resolveAccount(accountId), contentType, categoryId));
+  ipcMain.handle('xtream:seriesEpisodes', (_, accountId: string, seriesId: number) => xtreamProvider.seriesEpisodes(resolveAccount(accountId), seriesId));
+  ipcMain.handle('xtream:epg', (_, accountId: string, streamId: number, limit?: number) => xtreamProvider.shortEpg(resolveAccount(accountId), streamId, limit));
 
   // --- Player ---
   ipcMain.handle('player:open', async (_, payload) => {
