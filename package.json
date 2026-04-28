@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "description": "Desktop IPTV player with Xtream Codes support, favorites, history, series episodes, EPG and external player integration.",
-  "main": "dist-electron/index.js",
+  "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
     "dev:renderer": "vite",
@@ -12,7 +12,8 @@
     "build:renderer": "vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "dist": "npm run build && electron-builder",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
