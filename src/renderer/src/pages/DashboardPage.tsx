@@ -22,7 +22,9 @@ export function DashboardPage() {
     setActiveTab,
     setSearch,
     setLoading,
-    setError
+    setError,
+    enableSearchAll,
+    setEnableSearchAll
   } = useAppStore();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -60,13 +62,13 @@ export function DashboardPage() {
       setHistory(nextHistory);
 
       let categoryToLoad = activeCategoryId;
-      if (categoryToLoad === 'all' && nextCategories.length > 0) {
+      if (categoryToLoad === 'all' && !enableSearchAll && nextCategories.length > 0) {
         categoryToLoad = nextCategories[0].category_id;
         setActiveCategoryId(categoryToLoad);
       }
 
-      if (categoryToLoad !== 'all') {
-        const nextStreams = await window.xtremeApi.xtream.streams(activeAccountId, activeTab, categoryToLoad);
+      if (categoryToLoad !== 'all' || enableSearchAll) {
+        const nextStreams = await window.xtremeApi.xtream.streams(activeAccountId, activeTab, categoryToLoad === 'all' ? undefined : categoryToLoad);
         setStreams(nextStreams);
       } else {
         setStreams([]);
@@ -84,7 +86,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     loadLibrary();
-  }, [activeAccountId, activeTab, activeCategoryId]);
+  }, [activeAccountId, activeTab, activeCategoryId, enableSearchAll]);
 
   const filteredStreams = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -165,7 +167,7 @@ export function DashboardPage() {
           </section>
         ) : (
           <>
-            {shelfView === 'catalog' ? <CategoryList categories={categories} activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} /> : null}
+            {shelfView === 'catalog' ? <CategoryList categories={categories} activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} enableSearchAll={enableSearchAll} /> : null}
             {error ? <div className="alert error">{error}</div> : null}
             {loading ? <div className="alert">Carregando dados do servidor...</div> : null}
             <StreamGrid

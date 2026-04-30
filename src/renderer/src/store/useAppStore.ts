@@ -14,6 +14,8 @@ interface AppState {
   setSearch: (value: string) => void;
   setLoading: (value: boolean) => void;
   setError: (value?: string) => void;
+  enableSearchAll: boolean;
+  setEnableSearchAll: (value: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -31,5 +33,7 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
   setSearch: (search) => set({ search }),
   setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error })
+  setError: (error) => set({ error }),
+  enableSearchAll: false,
+  setEnableSearchAll: (enableSearchAll) => set({ enableSearchAll })
 }));

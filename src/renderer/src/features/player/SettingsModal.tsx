@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAppStore } from '@/store/useAppStore';
 
 interface SettingsModalProps {
   open: boolean;
@@ -7,6 +8,7 @@ interface SettingsModalProps {
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
   const [settings, setSettings] = useState({ externalPlayers: { vlcPath: '', mpvPath: '' }, stream: { probeTimeoutMs: 3500 } });
+  const { enableSearchAll, setEnableSearchAll } = useAppStore();
 
   useEffect(() => {
     if (open) {
@@ -37,6 +39,14 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
             value={settings.stream.probeTimeoutMs}
             onChange={(e) => setSettings({ ...settings, stream: { probeTimeoutMs: Number(e.target.value || 3500) } })}
           />
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '10px 0' }}>
+            <input
+              type="checkbox"
+              checked={enableSearchAll}
+              onChange={(e) => setEnableSearchAll(e.target.checked)}
+            />
+            Habilitar a categoria TODOS nas Séries e Filmes
+          </label>
         </div>
         <div className="modal-actions">
           <button className="ghost-button" onClick={onClose}>Fechar</button>
