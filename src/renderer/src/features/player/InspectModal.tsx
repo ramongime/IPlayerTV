@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { ContentType, EpgProgramme, Episode, StreamItem } from '@shared/domain';
 
 interface InspectModalProps {
@@ -15,6 +15,22 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
   const [epg, setEpg] = useState<EpgProgramme[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [expandedSeason, setExpandedSeason] = useState<number | null>(null);
+
+  const groupedEpisodes = useMemo(() => {
+    return episodes.reduce((acc, ep) => {
+      const seasonNum = ep.season ?? 0;
+      if (!acc[seasonNum]) acc[seasonNum] = [];
+      acc[seasonNum].push(ep);
+      return acc;
+    }, {} as Record<number, Episode[]>);
+  }, [episodes]);
+
+  const seasons = useMemo(() => {
+    return Object.keys(groupedEpisodes).map(Number).sort((a, b) => a - b);
+  }, [groupedEpisodes]);
+
+
 
   useEffect(() => {
     if (!open || !accountId || !stream) return;
@@ -25,6 +41,7 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
     setError(undefined);
 
     const task = async () => {
+      setExpandedSeason(null);
       if (contentType === 'series' && stream.series_id) {
         const data = await window.xtremeApi.xtream.seriesEpisodes(accountId, stream.series_id);
         setEpisodes(data);
@@ -74,11 +91,27 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
 
         {contentType === 'series' ? (
           <div className="detail-list">
-            {episodes.length === 0 ? <div className="alert">Não foi possível carregar episódios dessa série.</div> : episodes.map((episode) => (
-              <div className="detail-card" key={episode.id}>
-                <strong>T{episode.season}E{episode.episode_num} • {episode.title}</strong>
-                <small>Extensão: {episode.container_extension || 'mp4'}</small>
-                <button className="primary-button" onClick={() => onPlayEpisode(episode)}>Reproduzir episódio</button>
+            {episodes.length === 0 ? <div className="alert">Não foi possível carregar episódios dessa série.</div> : seasons.map((season) => (
+              <div key={season} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <div
+                  className="detail-card"
+                  style={{ cursor: 'pointer', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                  onClick={() => setExpandedSeason(expandedSeason === season ? null : season)}
+                >
+                  <strong style={{ margin: 0, fontSize: '1.1rem' }}>Temporada {season}</strong>
+                  <span>{expandedSeason === season ? '▼' : '▶'}</span>
+                </div>
+                {expandedSeason === season && (
+                  <div style={{ paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {groupedEpisodes[season].map((episode) => (
+                      <div className="detail-card" key={episode.id}>
+                        <strong>T{episode.season}E{episode.episode_num} • {episode.title}</strong>
+                        <small>Extensão: {episode.container_extension || 'mp4'}</small>
+                        <button className="primary-button" onClick={() => onPlayEpisode(episode)}>Reproduzir episódio</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

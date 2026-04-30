@@ -1,4 +1,5 @@
 import os from 'node:os';
+import { shell } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync } from 'node:fs';
@@ -11,6 +12,7 @@ export class DesktopPlayerProvider implements IPlayerProvider {
 
   async play(url: string, player: 'vlc' | 'mpv' | 'browser', title?: string) {
     if (player === 'browser') {
+      await shell.openExternal(url);
       return { method: 'browser', url, success: true };
     }
 

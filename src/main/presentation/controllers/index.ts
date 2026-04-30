@@ -39,7 +39,7 @@ export function registerControllers() {
   ipcMain.handle('xtream:authenticate', (_, account) => xtreamProvider.authenticate(account));
   ipcMain.handle('xtream:categories', (_, accountId: string, contentType: ContentType) => xtreamProvider.categories(resolveAccount(accountId), contentType));
   ipcMain.handle('xtream:streams', (_, accountId: string, contentType: ContentType, categoryId?: string) => xtreamProvider.streams(resolveAccount(accountId), contentType, categoryId));
-  ipcMain.handle('xtream:seriesEpisodes', (_, accountId: string, seriesId: number) => xtreamProvider.seriesEpisodes(resolveAccount(accountId), seriesId));
+  ipcMain.handle('xtream:series-episodes', (_, accountId: string, seriesId: number) => xtreamProvider.seriesEpisodes(resolveAccount(accountId), seriesId));
   ipcMain.handle('xtream:epg', (_, accountId: string, streamId: number, limit?: number) => xtreamProvider.shortEpg(resolveAccount(accountId), streamId, limit));
 
   // --- Player ---
