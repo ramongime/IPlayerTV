@@ -6,10 +6,13 @@ interface InternalPlayerProps {
   streamUrl: string;
   title: string;
   contentType: ContentType;
+  streamId?: number;
+  accountId?: string;
+  startProgress?: number;
   onClose: () => void;
 }
 
-export function InternalPlayer({ streamUrl, title, contentType, onClose }: InternalPlayerProps) {
+export function InternalPlayer({ streamUrl, title, contentType, streamId, accountId, startProgress, onClose }: InternalPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string>();
   const [isPlaying, setIsPlaying] = useState(true);
@@ -40,6 +43,9 @@ export function InternalPlayer({ streamUrl, title, contentType, onClose }: Inter
       hls.attachMedia(video);
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (startProgress && startProgress > 0) {
+          video.currentTime = startProgress;
+        }
         video.play().catch((err) => setError('Falha ao reproduzir automaticamente: ' + err.message));
       });
 
@@ -64,6 +70,11 @@ export function InternalPlayer({ streamUrl, title, contentType, onClose }: Inter
     } else if (video.canPlayType('application/vnd.apple.mpegurl') || !streamUrl.includes('.m3u8')) {
       // Native support (Safari) or non-HLS formats (.ts, .mp4, etc)
       video.src = streamUrl;
+      video.addEventListener('loadedmetadata', () => {
+        if (startProgress && startProgress > 0) {
+          video.currentTime = startProgress;
+        }
+      });
       video.play().catch((err) => {
         if (err.name !== 'AbortError') {
           setError('Falha ao reproduzir: ' + err.message);
@@ -89,11 +100,29 @@ export function InternalPlayer({ streamUrl, title, contentType, onClose }: Inter
     window.addEventListener('keydown', handleKeydown);
 
     return () => {
-      if (hls) hls.destroy();
-      window.removeEventListener('keydown', handleKeydown);
       clearTimeout(hoverTimeout);
+      if (hls) {
+        hls.destroy();
+      }
+      window.removeEventListener('keydown', handleKeydown);
     };
-  }, [streamUrl]);
+  }, [streamUrl, startProgress]);
+
+  // Progress Tracking
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !accountId || !streamId || contentType === 'live') return;
+
+    const interval = setInterval(() => {
+      const progress = Math.floor(video.currentTime);
+      const duration = Math.floor(video.duration);
+      if (!isNaN(progress) && !isNaN(duration) && duration > 0) {
+        window.xtremeApi.history.upsertProgress(accountId, streamId, progress, duration).catch(console.error);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [accountId, streamId, contentType]);
 
   return (
     <div 

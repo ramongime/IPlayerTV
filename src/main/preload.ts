@@ -21,7 +21,11 @@ contextBridge.exposeInMainWorld('xtremeApi', {
     toggle: (payload: unknown) => ipcRenderer.invoke('favorites:toggle', payload)
   },
   history: {
-    list: (accountId: string) => ipcRenderer.invoke('history:list', accountId)
+    list: (accountId: string) => ipcRenderer.invoke('history:list', accountId),
+    upsertProgress: (accountId: string, streamId: number, progress: number, duration: number) => ipcRenderer.invoke('history:upsertProgress', accountId, streamId, progress, duration)
+  },
+  tmdb: {
+    fetchInfo: (name: string, type: 'movie' | 'series') => ipcRenderer.invoke('tmdb:fetchInfo', name, type)
   },
   player: {
     open: (payload: unknown) => ipcRenderer.invoke('player:open', payload),

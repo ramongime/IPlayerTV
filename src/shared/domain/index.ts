@@ -1,6 +1,18 @@
 export type ContentType = 'live' | 'movie' | 'series';
 export type ShelfView = 'catalog' | 'favorites' | 'history';
 
+export interface AppConfig {
+  stream: {
+    probeTimeoutMs: number;
+    defaultPlayer: 'internal' | 'vlc' | 'mpv' | 'browser';
+  };
+  ui: {
+    theme: 'dark' | 'light';
+    defaultView: 'grid' | 'list';
+  };
+  tmdbApiKey?: string;
+}
+
 export interface Account {
   id: string;
   name: string;
@@ -20,6 +32,14 @@ export interface Category {
   parent_id?: number;
 }
 
+export interface TmdbInfo {
+  posterPath?: string;
+  backdropPath?: string;
+  overview?: string;
+  voteAverage?: number;
+  releaseDate?: string;
+}
+
 export interface StreamItem {
   stream_id?: number;
   series_id?: number;
@@ -35,6 +55,7 @@ export interface StreamItem {
   cover?: string;
   releaseDate?: string;
   last_modified?: string;
+  tmdbInfo?: TmdbInfo;
 }
 
 export interface Episode {
@@ -91,6 +112,8 @@ export interface HistoryItem {
   name: string;
   streamUrl: string;
   playedAt: string;
+  progress?: number;
+  duration?: number;
 }
 
 export interface XtreamAuthResponse {

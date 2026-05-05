@@ -32,6 +32,10 @@ declare global {
       };
       history: {
         list: (accountId: string) => Promise<any[]>;
+        upsertProgress: (accountId: string, streamId: number, progress: number, duration: number) => Promise<void>;
+      };
+      tmdb: {
+        fetchInfo: (name: string, type: 'movie' | 'series') => Promise<import('@shared/domain').TmdbInfo | undefined>;
       };
       player: {
         open: (payload: any) => Promise<{ method: string; url: string }>;

@@ -26,7 +26,10 @@ export function DashboardPage() {
     setLoading,
     setError,
     enableSearchAll,
-    setEnableSearchAll
+    setEnableSearchAll,
+    hiddenCategories,
+    toggleHiddenCategory,
+    loadHiddenCategories
   } = useAppStore();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -43,7 +46,7 @@ export function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [nowPlaying, setNowPlaying] = useState<Record<number, string>>({});
   const [editingAccount, setEditingAccount] = useState<Account>();
-  const [internalPlayerUrl, setInternalPlayerUrl] = useState<{ url: string; title: string; contentType: ContentType }>();
+  const [internalPlayerUrl, setInternalPlayerUrl] = useState<{ url: string; title: string; contentType: ContentType; streamId?: number; accountId?: string; startProgress?: number }>();
   const [multiViewStreams, setMultiViewStreams] = useState<Array<{ url: string; title: string; id: string }>>([]);
   const [multiViewMinimized, setMultiViewMinimized] = useState(false);
 
@@ -108,6 +111,9 @@ export function DashboardPage() {
 
   useEffect(() => {
     loadLibrary();
+    if (activeAccountId) {
+      loadHiddenCategories(activeAccountId, activeTab);
+    }
   }, [activeAccountId, activeTab, activeCategoryId, enableSearchAll]);
 
   // --- Keyboard shortcuts ---
@@ -150,27 +156,43 @@ export function DashboardPage() {
     return base.filter((item) => item.name.toLowerCase().includes(normalized));
   }, [streams, search, favorites, history, shelfView, activeTab]);
 
-  const playItem = async (stream: StreamItem, override?: { contentType?: 'series' | 'movie' | 'live'; streamId?: number; extension?: string; name?: string }) => {
+  const playItem = async (stream: StreamItem, options?: { contentType?: 'series' | 'movie' | 'live'; streamId?: number; extension?: string; name?: string }) => {
     if (!activeAccountId) return;
     const account = accounts.find(a => a.id === activeAccountId);
     if (!account) return;
 
-    const streamId = override?.streamId ?? stream.stream_id ?? stream.series_id ?? 0;
-    const contentType = override?.contentType ?? activeTab;
-    const streamName = override?.name ?? stream.name;
+    const streamId = options?.streamId ?? stream.stream_id ?? stream.series_id ?? 0;
+    const contentType = options?.contentType ?? activeTab;
+    const streamName = options?.name ?? stream.name;
 
     if (account.player === 'internal') {
       const result = await window.xtremeApi.player.resolveUrl({
         accountId: activeAccountId,
-        contentType,
+        contentType: options?.contentType || activeTab,
         streamId,
-        extension: override?.extension ?? stream.container_extension
+        extension: options?.extension || stream.container_extension
       });
-      setInternalPlayerUrl({ url: result.url, title: streamName, contentType });
-      setLastPlayMessage(undefined);
+
+      // Check if we have history for this stream to resume
+      const histories = await window.xtremeApi.history.list(activeAccountId);
+      const historyItem = histories.find(h => h.streamId === streamId);
       
-      const nextHistory = await window.xtremeApi.history.list(activeAccountId);
-      setHistory(nextHistory);
+      let startProgress = 0;
+      if (historyItem?.progress && historyItem.duration && historyItem.progress < historyItem.duration - 60) {
+        if (confirm(`Deseja retomar do minuto ${Math.floor(historyItem.progress / 60)}?`)) {
+          startProgress = historyItem.progress;
+        }
+      }
+
+      setInternalPlayerUrl({ 
+        url: result.url, 
+        title: options?.name || stream.name, 
+        contentType: options?.contentType || activeTab,
+        streamId,
+        accountId: activeAccountId,
+        startProgress
+      });
+      setLastPlayMessage(undefined);
       return;
     }
 
@@ -179,7 +201,7 @@ export function DashboardPage() {
       contentType,
       streamId,
       name: streamName,
-      extension: override?.extension ?? stream.container_extension
+      extension: options?.extension ?? stream.container_extension
     });
 
     if (account.player === 'browser') {
@@ -330,7 +352,7 @@ export function DashboardPage() {
           </section>
         ) : (
           <>
-            {shelfView === 'catalog' ? <CategoryList categories={categories} activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} enableSearchAll={enableSearchAll} /> : null}
+            {shelfView === 'catalog' ? <CategoryList categories={categories} activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} enableSearchAll={enableSearchAll} hiddenCategories={hiddenCategories} onToggleHidden={toggleHiddenCategory} /> : null}
             {error ? <div className="alert error">{error}</div> : null}
             {loading ? <div className="alert">Carregando dados do servidor...</div> : null}
             
@@ -400,6 +422,9 @@ export function DashboardPage() {
           streamUrl={internalPlayerUrl.url} 
           title={internalPlayerUrl.title} 
           contentType={internalPlayerUrl.contentType}
+          streamId={internalPlayerUrl.streamId}
+          accountId={internalPlayerUrl.accountId}
+          startProgress={internalPlayerUrl.startProgress}
           onClose={() => setInternalPlayerUrl(undefined)} 
         />
       )}

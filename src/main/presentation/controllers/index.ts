@@ -50,6 +50,15 @@ export function registerControllers() {
   // --- History ---
   ipcMain.handle('history:list', (_, accountId) => historyRepo.list(accountId));
   ipcMain.handle('history:add', (_, payload) => historyRepo.add(payload));
+  ipcMain.handle('history:upsertProgress', (_, accountId, streamId, progress, duration) => historyRepo.upsertProgress(accountId, streamId, progress, duration));
+
+  // --- TMDB ---
+  const tmdbProvider = new (require('../infrastructure/providers/TmdbProvider').TmdbProvider)();
+  ipcMain.handle('tmdb:fetchInfo', async (_, name: string, type: 'movie' | 'series') => {
+    const config: any = settingsProvider.get();
+    if (!config.tmdbApiKey) return undefined;
+    return tmdbProvider.fetchInfo(name, type, config.tmdbApiKey);
+  });
 
 
   // --- Xtream ---

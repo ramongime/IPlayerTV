@@ -8,7 +8,7 @@ export class HistoryRepository implements IHistoryRepository {
     return db.prepare('SELECT * FROM history WHERE accountId = ? ORDER BY playedAt DESC LIMIT 100').all(accountId) as HistoryItem[];
   }
 
-  add(payload: Pick<HistoryItem, 'accountId' | 'contentType' | 'streamId' | 'name' | 'streamUrl'>): void {
+  add(payload: Pick<HistoryItem, 'accountId' | 'contentType' | 'streamId' | 'name' | 'streamUrl' | 'progress' | 'duration'>): void {
     const db = getDatabase();
     
     // Remove if exists to move to top
@@ -16,11 +16,22 @@ export class HistoryRepository implements IHistoryRepository {
       .run(payload.accountId, payload.contentType, payload.streamId);
 
     db.prepare(`
-      INSERT INTO history (accountId, contentType, streamId, name, streamUrl, playedAt)
-      VALUES (@accountId, @contentType, @streamId, @name, @streamUrl, @playedAt)
+      INSERT INTO history (accountId, contentType, streamId, name, streamUrl, playedAt, progress, duration)
+      VALUES (@accountId, @contentType, @streamId, @name, @streamUrl, @playedAt, @progress, @duration)
     `).run({
       ...payload,
+      progress: payload.progress ?? null,
+      duration: payload.duration ?? null,
       playedAt: new Date().toISOString()
     });
+  }
+
+  upsertProgress(accountId: string, streamId: number, progress: number, duration: number): void {
+    const db = getDatabase();
+    db.prepare(`
+      UPDATE history 
+      SET progress = ?, duration = ?, playedAt = ?
+      WHERE accountId = ? AND streamId = ?
+    `).run(progress, duration, new Date().toISOString(), accountId, streamId);
   }
 }

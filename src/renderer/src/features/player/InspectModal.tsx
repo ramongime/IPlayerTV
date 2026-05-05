@@ -17,6 +17,7 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [expandedSeason, setExpandedSeason] = useState<number | null>(null);
+  const [tmdbInfo, setTmdbInfo] = useState<import('@shared/domain').TmdbInfo>();
 
   const groupedEpisodes = useMemo(() => {
     return episodes.reduce((acc, ep) => {
@@ -43,6 +44,15 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
 
     const task = async () => {
       setExpandedSeason(null);
+      setTmdbInfo(undefined);
+
+      // Fetch TMDB Info for Movies and Series (non-blocking)
+      if (contentType === 'movie' || contentType === 'series') {
+        window.xtremeApi.tmdb.fetchInfo(stream.name, contentType).then(info => {
+          if (info) setTmdbInfo(info);
+        }).catch(console.error);
+      }
+
       if (contentType === 'series' && stream.series_id) {
         const data = await window.xtremeApi.xtream.seriesEpisodes(accountId, stream.series_id);
         setEpisodes(data);
@@ -64,15 +74,27 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
 
   if (!open || !stream) return null;
 
+  const coverImage = tmdbInfo?.posterPath || stream?.cover || stream?.stream_icon;
+  const plot = tmdbInfo?.overview || stream?.plot;
+  const rating = tmdbInfo?.voteAverage || stream?.rating;
+
   return (
-    <div className="modal-backdrop">
-      <div className="modal large-modal">
-        <div className="modal-header-row">
-          <div>
-            <h2>{stream.name}</h2>
-            <p className="muted-text">{stream.plot || 'Sem descrição detalhada.'}</p>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal large-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header-row" style={tmdbInfo?.backdropPath ? { backgroundImage: `linear-gradient(to right, rgba(15, 23, 42, 0.9) 30%, transparent), url(${tmdbInfo.backdropPath})`, backgroundSize: 'cover', backgroundPosition: 'right', padding: '24px', borderRadius: '12px 12px 0 0', display: 'flex', gap: '20px' } : { display: 'flex', gap: '20px', paddingBottom: '16px', borderBottom: '1px solid #1e293b' }}>
+          <div style={{ flexShrink: 0, width: '120px' }}>
+            {coverImage ? <img src={coverImage} alt={stream.name} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }} /> : <div className="placeholder">Sem Capa</div>}
           </div>
-          <button className="ghost-button" onClick={onClose}>Fechar</button>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h2 style={{ fontSize: '1.8rem', margin: '0 0 8px 0', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>{stream.name}</h2>
+            {plot && <p className="muted-text" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)', maxWidth: '600px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plot}</p>}
+            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '0.9rem', color: '#cbd5e1', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+              {rating && <span>⭐ {rating}</span>}
+              {tmdbInfo?.releaseDate && <span>📅 {tmdbInfo.releaseDate.split('-')[0]}</span>}
+              {stream.added && <span>Adicionado em: {new Date(Number(stream.added) * 1000).toLocaleDateString()}</span>}
+            </div>
+          </div>
+          <button className="ghost-button" onClick={onClose} style={{ alignSelf: 'flex-start' }}>Fechar</button>
         </div>
 
         {loading ? <div className="alert">Carregando detalhes...</div> : null}

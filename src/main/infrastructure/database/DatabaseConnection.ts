@@ -51,4 +51,12 @@ function migrate(database: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS history_account_playedAt_ix ON history(accountId, playedAt DESC);
   `);
+
+  // Migrations for existing DBs
+  try {
+    database.exec('ALTER TABLE history ADD COLUMN progress INTEGER;');
+    database.exec('ALTER TABLE history ADD COLUMN duration INTEGER;');
+  } catch (e) {
+    // Columns already exist
+  }
 }

@@ -7,7 +7,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
-  const [settings, setSettings] = useState({ externalPlayers: { vlcPath: '', mpvPath: '' }, stream: { probeTimeoutMs: 3500 } });
+  const [settings, setSettings] = useState({ externalPlayers: { vlcPath: '', mpvPath: '' }, stream: { probeTimeoutMs: 3500 }, tmdbApiKey: '' });
   const { enableSearchAll, setEnableSearchAll } = useAppStore();
 
   useEffect(() => {
@@ -38,6 +38,11 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
             placeholder="Tempo do probe em ms"
             value={settings.stream.probeTimeoutMs}
             onChange={(e) => setSettings({ ...settings, stream: { probeTimeoutMs: Number(e.target.value || 3500) } })}
+          />
+          <input
+            placeholder="TMDB API Key (Para Posteres em Alta Resolução)"
+            value={settings.tmdbApiKey || ''}
+            onChange={(e) => setSettings({ ...settings, tmdbApiKey: e.target.value })}
           />
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '10px 0' }}>
             <input
