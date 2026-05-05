@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
 import { registerControllers } from './presentation/controllers';
 
@@ -24,6 +24,11 @@ function createWindow() {
   } else {
     window.loadFile(path.join(__dirname, '../../dist/index.html'));
   }
+
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
 }
 
 app.whenReady().then(() => {

@@ -8,7 +8,7 @@ export interface Account {
   username: string;
   password: string;
   output: 'm3u8' | 'ts';
-  player: 'vlc' | 'mpv' | 'browser';
+  player: 'vlc' | 'mpv' | 'browser' | 'internal';
   userAgent?: string;
   createdAt: string;
   updatedAt: string;
@@ -65,10 +65,15 @@ export interface EpgProgramme {
   title?: string;
   description?: string;
   start?: string;
+  start_raw?: string;
   end?: string;
+  end_raw?: string;
   now_playing?: string;
   has_archive?: number;
 }
+
+export type NowPlayingMap = Record<number, string>;
+
 
 export interface Favorite {
   accountId: string;

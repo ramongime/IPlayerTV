@@ -8,9 +8,10 @@ interface InspectModalProps {
   stream?: StreamItem;
   onClose: () => void;
   onPlayEpisode: (episode: Episode) => Promise<void>;
+  onPlayCatchup?: (epg: EpgProgramme) => Promise<void>;
 }
 
-export function InspectModal({ open, accountId, contentType, stream, onClose, onPlayEpisode }: InspectModalProps) {
+export function InspectModal({ open, accountId, contentType, stream, onClose, onPlayEpisode, onPlayCatchup }: InspectModalProps) {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [epg, setEpg] = useState<EpgProgramme[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,6 +127,31 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
             </div>
           </div>
         ) : null}
+
+        {contentType === 'live' && epg.length > 0 && (
+          <div className="episodes-list">
+            <h3 style={{ marginBottom: '16px', borderBottom: '1px solid #1e293b', paddingBottom: '8px' }}>Gravações Disponíveis (Catch-up)</h3>
+            {epg.filter(p => p.has_archive).length === 0 && (
+              <div className="alert" style={{ background: 'transparent' }}>
+                Nenhum programa gravado disponível para este canal.
+              </div>
+            )}
+            {epg.filter(p => p.has_archive).map((prog, idx) => (
+              <div key={idx} className="episode-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="episode-info">
+                  <h4>{prog.title}</h4>
+                  <p>{prog.start} - {prog.end}</p>
+                  {prog.description && <p className="episode-plot">{prog.description}</p>}
+                </div>
+                {onPlayCatchup && (
+                  <button className="primary-button" onClick={() => onPlayCatchup(prog)}>
+                    Play Gravação
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

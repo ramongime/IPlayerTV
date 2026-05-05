@@ -1,4 +1,4 @@
-import type { Account, Category, ContentType, EpgProgramme, Episode, SeriesInfoResponse, StreamItem, XtreamAuthResponse } from '@shared/domain';
+import type { Account, Category, ContentType, EpgProgramme, Episode, NowPlayingMap, SeriesInfoResponse, StreamItem, XtreamAuthResponse } from '@shared/domain';
 import type { IXtreamProvider } from '../../core/services/IXtreamProvider';
 
 export class XtreamProvider implements IXtreamProvider {
@@ -72,7 +72,7 @@ export class XtreamProvider implements IXtreamProvider {
   }
 
   async shortEpg(account: Account, streamId: number, limit = 10): Promise<EpgProgramme[]> {
-    const data = await this.request<{ epg_listings?: EpgProgramme[] }>(account, {
+    const data = await this.request<{ epg_listings?: Array<Record<string, unknown>> }>(account, {
       username: account.username,
       password: account.password,
       action: 'get_short_epg',
@@ -80,7 +80,95 @@ export class XtreamProvider implements IXtreamProvider {
       limit: String(limit)
     });
 
-    return data.epg_listings ?? [];
+    return (data.epg_listings ?? []).map((raw) => this.decodeEpgListing(raw));
+  }
+
+  async getEpgTable(account: Account, streamIds: string): Promise<Record<string, EpgProgramme[]>> {
+    const data = await this.request<any>(account, {
+      username: account.username,
+      password: account.password,
+      action: 'get_simple_data_table',
+      stream_id: streamIds
+    });
+
+    const result: Record<string, EpgProgramme[]> = {};
+    
+    if (data && Array.isArray(data.epg_listings)) {
+      for (const channel of data.epg_listings) {
+        if (channel && channel.id && Array.isArray(channel.epg_listings)) {
+          result[channel.id] = channel.epg_listings.map((raw: any) => this.decodeEpgListing(raw));
+        }
+      }
+    } else if (data && typeof data.epg_listings === 'object') {
+      for (const [id, listings] of Object.entries(data.epg_listings)) {
+        if (Array.isArray(listings)) {
+          result[id] = listings.map((raw: any) => this.decodeEpgListing(raw));
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  async nowPlaying(account: Account, streamIds: number[]): Promise<NowPlayingMap> {
+    const result: NowPlayingMap = {};
+    const CONCURRENCY = 5;
+
+    for (let i = 0; i < streamIds.length; i += CONCURRENCY) {
+      const batch = streamIds.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        batch.map(async (streamId) => {
+          const items = await this.shortEpg(account, streamId, 2);
+          // Find the programme that is currently airing or the first one
+          const now = items.length > 0 ? items[0] : undefined;
+          if (now?.title) {
+            result[streamId] = now.title;
+          }
+        })
+      );
+    }
+
+    return result;
+  }
+
+  private decodeBase64(value: unknown): string {
+    if (typeof value !== 'string' || value.length === 0) return '';
+    try {
+      return Buffer.from(value, 'base64').toString('utf-8');
+    } catch {
+      return String(value);
+    }
+  }
+
+  private formatEpgTime(value: unknown): string {
+    if (!value) return '';
+    // The API may return a date string like "2026-05-04 21:00:00" or an epoch timestamp
+    const str = String(value);
+    // Try parsing as a date string first
+    const asDate = new Date(str.replace(' ', 'T'));
+    if (!isNaN(asDate.getTime())) {
+      return asDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+    // Try as epoch seconds
+    const epoch = Number(str);
+    if (!isNaN(epoch) && epoch > 1000000000) {
+      const d = new Date(epoch * 1000);
+      return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+    return str;
+  }
+
+  private decodeEpgListing(raw: Record<string, unknown>): EpgProgramme {
+    return {
+      title: this.decodeBase64(raw.title) || undefined,
+      description: this.decodeBase64(raw.description) || undefined,
+      start: this.formatEpgTime(raw.start),
+      start_raw: typeof raw.start === 'string' ? raw.start : undefined,
+      end: this.formatEpgTime(raw.end),
+      end_raw: typeof raw.end === 'string' ? raw.end : undefined,
+      now_playing: typeof raw.now_playing === 'string' ? raw.now_playing : undefined,
+      has_archive: typeof raw.has_archive === 'number' ? raw.has_archive : undefined
+    };
   }
 
   private buildStreamCandidates(account: Account, contentType: ContentType, streamId: number, extension?: string) {
@@ -101,6 +189,27 @@ export class XtreamProvider implements IXtreamProvider {
     }
 
     return exts.map((ext) => `${server}/series/${account.username}/${account.password}/${streamId}.${ext}`);
+  }
+
+  resolveCatchupUrl(account: Account, streamId: number, startRaw: string, durationMinutes: number, extension?: string) {
+    const server = account.server.replace(/\/$/, '');
+    const ext = extension || 'm3u8';
+    
+    // Parse the start time "YYYY-MM-DD HH:MM:SS" into "YYYY-MM-DD:HH-MM"
+    const dateObj = new Date(startRaw.replace(' ', 'T'));
+    const pad = (n: number) => String(n).padStart(2, '0');
+    
+    let startTime = startRaw; // fallback
+    if (!isNaN(dateObj.getTime())) {
+      const Y = dateObj.getFullYear();
+      const M = pad(dateObj.getMonth() + 1);
+      const D = pad(dateObj.getDate());
+      const h = pad(dateObj.getHours());
+      const m = pad(dateObj.getMinutes());
+      startTime = `${Y}-${M}-${D}:${h}-${m}`;
+    }
+
+    return `${server}/timeshift/${account.username}/${account.password}/${durationMinutes}/${startTime}/${streamId}.${ext}`;
   }
 
   async resolveBestStreamUrl(account: Account, contentType: ContentType, streamId: number, extension?: string) {

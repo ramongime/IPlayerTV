@@ -30,6 +30,22 @@ export class AccountRepository implements IAccountRepository {
     return account as Account;
   }
 
+  update(id: string, payload: Partial<Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player' | 'userAgent'>>): Account {
+    const db = getDatabase();
+    const existing = db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account | undefined;
+    if (!existing) throw new Error(`Account not found: ${id}`);
+
+    const fields = Object.keys(payload).filter((key) => (payload as Record<string, unknown>)[key] !== undefined);
+    if (fields.length === 0) return existing;
+
+    const setClauses = fields.map((field) => `${field} = @${field}`).join(', ');
+    const now = new Date().toISOString();
+    const stmt = db.prepare(`UPDATE accounts SET ${setClauses}, updatedAt = @updatedAt WHERE id = @id`);
+    stmt.run({ ...payload, updatedAt: now, id });
+
+    return db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account;
+  }
+
   remove(id: string): void {
     const db = getDatabase();
     db.prepare('DELETE FROM accounts WHERE id = ?').run(id);
