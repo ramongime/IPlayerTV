@@ -10,6 +10,10 @@ export interface AppConfig {
     theme: 'dark' | 'light';
     defaultView: 'grid' | 'list';
   };
+  player?: {
+    defaultAudioLanguage?: string;
+    defaultSubtitleLanguage?: string;
+  };
   tmdbApiKey?: string;
 }
 

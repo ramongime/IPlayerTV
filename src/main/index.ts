@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
 import { registerControllers } from './presentation/controllers';
+import { autoUpdater } from 'electron-updater';
 
 function createWindow() {
   const window = new BrowserWindow({
@@ -34,6 +35,13 @@ function createWindow() {
 app.whenReady().then(() => {
   registerControllers();
   createWindow();
+
+  // Check for updates
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.error('Failed to check for updates:', err);
+    });
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

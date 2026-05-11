@@ -8,6 +8,11 @@ interface AppSettings {
   stream: {
     probeTimeoutMs: number;
   };
+  player?: {
+    defaultAudioLanguage?: string;
+    defaultSubtitleLanguage?: string;
+  };
+  tmdbApiKey?: string;
 }
 
 const store = new Store<AppSettings>({
@@ -15,6 +20,10 @@ const store = new Store<AppSettings>({
     externalPlayers: {},
     stream: {
       probeTimeoutMs: 3500
+    },
+    player: {
+      defaultAudioLanguage: '',
+      defaultSubtitleLanguage: ''
     }
   }
 });

@@ -7,12 +7,22 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
-  const [settings, setSettings] = useState({ externalPlayers: { vlcPath: '', mpvPath: '' }, stream: { probeTimeoutMs: 3500 }, tmdbApiKey: '' });
+  const [settings, setSettings] = useState({ 
+    externalPlayers: { vlcPath: '', mpvPath: '' }, 
+    stream: { probeTimeoutMs: 3500 }, 
+    player: { defaultAudioLanguage: '', defaultSubtitleLanguage: '' },
+    tmdbApiKey: '' 
+  });
   const { enableSearchAll, setEnableSearchAll } = useAppStore();
 
   useEffect(() => {
     if (open) {
-      window.xtremeApi.settings.get().then(setSettings);
+      window.xtremeApi.settings.get().then((data: any) => {
+        setSettings({
+          ...data,
+          player: data.player || { defaultAudioLanguage: '', defaultSubtitleLanguage: '' }
+        });
+      });
     }
   }, [open]);
 
@@ -25,24 +35,34 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         <div className="form-grid">
           <input
             placeholder="Caminho do VLC"
-            value={settings.externalPlayers.vlcPath || ''}
+            value={settings.externalPlayers?.vlcPath || ''}
             onChange={(e) => setSettings({ ...settings, externalPlayers: { ...settings.externalPlayers, vlcPath: e.target.value } })}
           />
           <input
             placeholder="Caminho do mpv"
-            value={settings.externalPlayers.mpvPath || ''}
+            value={settings.externalPlayers?.mpvPath || ''}
             onChange={(e) => setSettings({ ...settings, externalPlayers: { ...settings.externalPlayers, mpvPath: e.target.value } })}
           />
           <input
             type="number"
             placeholder="Tempo do probe em ms"
-            value={settings.stream.probeTimeoutMs}
+            value={settings.stream?.probeTimeoutMs || 3500}
             onChange={(e) => setSettings({ ...settings, stream: { probeTimeoutMs: Number(e.target.value || 3500) } })}
           />
           <input
             placeholder="TMDB API Key (Para Posteres em Alta Resolução)"
             value={settings.tmdbApiKey || ''}
             onChange={(e) => setSettings({ ...settings, tmdbApiKey: e.target.value })}
+          />
+          <input
+            placeholder="Idioma padrão de Áudio (ex: pt, en)"
+            value={settings.player?.defaultAudioLanguage || ''}
+            onChange={(e) => setSettings({ ...settings, player: { ...settings.player, defaultAudioLanguage: e.target.value } })}
+          />
+          <input
+            placeholder="Idioma padrão de Legenda (ex: pt, en)"
+            value={settings.player?.defaultSubtitleLanguage || ''}
+            onChange={(e) => setSettings({ ...settings, player: { ...settings.player, defaultSubtitleLanguage: e.target.value } })}
           />
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '10px 0' }}>
             <input

@@ -45,6 +45,7 @@ function HlsVideo({ url, active, onClick }: { url: string; active: boolean; onCl
     <div 
       className={`multiview-cell ${active ? 'active' : ''}`} 
       onClick={onClick}
+      style={{ width: '100%', height: '100%' }}
     >
       <video
         ref={videoRef}
@@ -99,7 +100,7 @@ export function MultiViewPlayer({ streams, minimized, onMinimize, onClose, onRem
 
       <div className="multiview-grid" style={gridStyle}>
         {streams.map((stream, idx) => (
-          <div key={stream.id} style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <div key={stream.id} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
             <HlsVideo 
               url={stream.url} 
               active={activeIndex === idx} 

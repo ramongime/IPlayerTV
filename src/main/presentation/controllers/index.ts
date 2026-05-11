@@ -53,7 +53,7 @@ export function registerControllers() {
   ipcMain.handle('history:upsertProgress', (_, accountId, streamId, progress, duration) => historyRepo.upsertProgress(accountId, streamId, progress, duration));
 
   // --- TMDB ---
-  const tmdbProvider = new (require('../infrastructure/providers/TmdbProvider').TmdbProvider)();
+  const tmdbProvider = new (require('../../infrastructure/providers/TmdbProvider').TmdbProvider)();
   ipcMain.handle('tmdb:fetchInfo', async (_, name: string, type: 'movie' | 'series') => {
     const config: any = settingsProvider.get();
     if (!config.tmdbApiKey) return undefined;
@@ -137,4 +137,24 @@ export function registerControllers() {
   // --- Settings ---
   ipcMain.handle('settings:get', () => settingsProvider.get());
   ipcMain.handle('settings:update', (_, payload) => settingsProvider.update(payload));
+
+  // --- Window Features (PIP & Downloads) ---
+  ipcMain.handle('window:togglePip', (event, enable: boolean) => {
+    const win = require('electron').BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.setAlwaysOnTop(enable, 'floating');
+      win.setVisibleOnAllWorkspaces(enable);
+      if (enable) {
+        win.setMinimumSize(400, 225); // Permite encolher abaixo de 1200x720
+        win.setSize(400, 225);
+      } else {
+        win.setMinimumSize(1200, 720); // Restaura o limite original
+        win.setSize(1200, 720);
+      }
+    }
+  });
+
+  ipcMain.handle('window:download', (event, url: string) => {
+    event.sender.downloadURL(url);
+  });
 }

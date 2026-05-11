@@ -146,6 +146,15 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
               <strong>{stream.name}</strong>
               <small>Extensão: {stream.container_extension || 'mp4'}</small>
               <p>{stream.plot || 'Sem descrição detalhada.'}</p>
+              <button className="ghost-button" style={{ marginTop: '12px' }} onClick={async () => {
+                const urlResult = await window.xtremeApi.player.resolveUrl({
+                  accountId,
+                  contentType: 'movie',
+                  streamId: stream.stream_id ?? stream.series_id ?? 0,
+                  extension: stream.container_extension || 'mp4'
+                });
+                window.xtremeApi.window.download(urlResult.url);
+              }}>⬇ Baixar Vídeo</button>
             </div>
           </div>
         ) : null}

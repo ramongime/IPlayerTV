@@ -159,12 +159,30 @@ export class XtreamProvider implements IXtreamProvider {
   }
 
   private decodeEpgListing(raw: Record<string, unknown>): EpgProgramme {
+    let startTs = Number(raw.start_timestamp) || 0;
+    let stopTs = Number(raw.stop_timestamp) || 0;
+
+    if (!startTs && typeof raw.start === 'string') {
+      const parsed = new Date(raw.start.replace(' ', 'T')).getTime();
+      if (!isNaN(parsed)) startTs = parsed / 1000;
+    }
+    if (!stopTs && typeof raw.end === 'string') {
+      const parsed = new Date(raw.end.replace(' ', 'T')).getTime();
+      if (!isNaN(parsed)) stopTs = parsed / 1000;
+    }
+
+    if (startTs && stopTs && startTs > stopTs) {
+      const temp = startTs;
+      startTs = stopTs;
+      stopTs = temp;
+    }
+
     return {
       title: this.decodeBase64(raw.title) || undefined,
       description: this.decodeBase64(raw.description) || undefined,
-      start: this.formatEpgTime(raw.start),
+      start: startTs ? this.formatEpgTime(startTs) : this.formatEpgTime(raw.start),
       start_raw: typeof raw.start === 'string' ? raw.start : undefined,
-      end: this.formatEpgTime(raw.end),
+      end: stopTs ? this.formatEpgTime(stopTs) : this.formatEpgTime(raw.end),
       end_raw: typeof raw.end === 'string' ? raw.end : undefined,
       now_playing: typeof raw.now_playing === 'string' ? raw.now_playing : undefined,
       has_archive: typeof raw.has_archive === 'number' ? raw.has_archive : undefined

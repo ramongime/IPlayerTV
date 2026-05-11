@@ -51,6 +51,14 @@ declare global {
       shell: {
         openExternal: (url: string) => Promise<void>;
       };
+      backup: {
+        export: () => Promise<{ ok: boolean; path?: string }>;
+        import: () => Promise<{ ok: boolean }>;
+      };
+      window: {
+        togglePip: (enable: boolean) => Promise<void>;
+        download: (url: string) => Promise<void>;
+      };
     };
   }
 }

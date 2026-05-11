@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AccountModal } from '@/features/auth/AccountModal';
 import { CategoryList } from '@/features/catalog/CategoryList';
 import { InspectModal } from '@/features/player/InspectModal';
@@ -90,7 +91,7 @@ export function DashboardPage() {
           if (streamIds.length > 0) {
             window.xtremeApi.xtream.nowPlaying(activeAccountId, streamIds)
               .then((data) => setNowPlaying(data))
-              .catch(() => {}); // silently ignore errors
+              .catch(() => { }); // silently ignore errors
           }
         } else {
           setNowPlaying({});
@@ -156,6 +157,14 @@ export function DashboardPage() {
     return base.filter((item) => item.name.toLowerCase().includes(normalized));
   }, [streams, search, favorites, history, shelfView, activeTab]);
 
+  const featuredStream = useMemo(() => {
+    if (filteredStreams.length > 0 && shelfView === 'catalog' && (activeTab === 'movie' || activeTab === 'series') && !search) {
+      // Pega o primeiro item que tenha capa para destacar
+      return filteredStreams.find(s => s.cover || s.stream_icon) || filteredStreams[0];
+    }
+    return null;
+  }, [filteredStreams, shelfView, activeTab, search]);
+
   const playItem = async (stream: StreamItem, options?: { contentType?: 'series' | 'movie' | 'live'; streamId?: number; extension?: string; name?: string }) => {
     if (!activeAccountId) return;
     const account = accounts.find(a => a.id === activeAccountId);
@@ -166,17 +175,24 @@ export function DashboardPage() {
     const streamName = options?.name ?? stream.name;
 
     if (account.player === 'internal') {
+      let forcedExtension = options?.extension || stream.container_extension;
+      if (contentType === 'live') {
+        forcedExtension = 'm3u8';
+      } else if (!forcedExtension || forcedExtension === 'mkv' || forcedExtension === 'ts') {
+        forcedExtension = 'mp4';
+      }
+
       const result = await window.xtremeApi.player.resolveUrl({
         accountId: activeAccountId,
-        contentType: options?.contentType || activeTab,
+        contentType: contentType,
         streamId,
-        extension: options?.extension || stream.container_extension
+        extension: forcedExtension
       });
 
       // Check if we have history for this stream to resume
       const histories = await window.xtremeApi.history.list(activeAccountId);
       const historyItem = histories.find(h => h.streamId === streamId);
-      
+
       let startProgress = 0;
       if (historyItem?.progress && historyItem.duration && historyItem.progress < historyItem.duration - 60) {
         if (confirm(`Deseja retomar do minuto ${Math.floor(historyItem.progress / 60)}?`)) {
@@ -184,14 +200,15 @@ export function DashboardPage() {
         }
       }
 
-      setInternalPlayerUrl({ 
-        url: result.url, 
-        title: options?.name || stream.name, 
+      setInternalPlayerUrl({
+        url: result.url,
+        title: options?.name || stream.name,
         contentType: options?.contentType || activeTab,
         streamId,
         accountId: activeAccountId,
         startProgress
       });
+      setIsSidebarOpen(false); // Colapsa a sidebar para melhor experiência
       setLastPlayMessage(undefined);
       return;
     }
@@ -207,9 +224,9 @@ export function DashboardPage() {
     if (account.player === 'browser') {
       setLastPlayMessage(
         <span style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          O vídeo foi aberto no seu navegador. 
-          <button 
-            onClick={() => window.xtremeApi.shell.openExternal(result.url)} 
+          O vídeo foi aberto no seu navegador.
+          <button
+            onClick={() => window.xtremeApi.shell.openExternal(result.url)}
             style={{ background: 'none', border: 'none', color: '#4cc9f0', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
           >
             Clique aqui se não abriu
@@ -274,9 +291,9 @@ export function DashboardPage() {
     if (account.player === 'browser') {
       setLastPlayMessage(
         <span style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          A gravação foi aberta no navegador. 
-          <button 
-            onClick={() => window.xtremeApi.shell.openExternal(result.url)} 
+          A gravação foi aberta no navegador.
+          <button
+            onClick={() => window.xtremeApi.shell.openExternal(result.url)}
             style={{ background: 'none', border: 'none', color: '#4cc9f0', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
           >
             Clique aqui se não abriu
@@ -303,7 +320,7 @@ export function DashboardPage() {
       accountId: activeAccountId,
       contentType: 'live',
       streamId,
-      extension: stream.container_extension
+      extension: 'm3u8'
     });
     setMultiViewStreams(prev => [...prev, { url: result.url, title: stream.name || 'Ao Vivo', id: String(streamId) }]);
     setMultiViewMinimized(false);
@@ -351,43 +368,96 @@ export function DashboardPage() {
             <button className="primary-button" onClick={() => setShowAccountModal(true)}>Adicionar conta</button>
           </section>
         ) : (
-          <>
-            {shelfView === 'catalog' ? <CategoryList categories={categories} activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} enableSearchAll={enableSearchAll} hiddenCategories={hiddenCategories} onToggleHidden={toggleHiddenCategory} /> : null}
-            {error ? <div className="alert error">{error}</div> : null}
-            {loading ? <div className="alert">Carregando dados do servidor...</div> : null}
-            
-            <StreamGrid
-                contentType={activeTab}
-                streams={filteredStreams}
-                favorites={favorites}
-                nowPlaying={activeTab === 'live' ? nowPlaying : undefined}
-                onToggleFavorite={async (stream) => {
-                  const streamId = stream.stream_id ?? stream.series_id ?? 0;
-                  await window.xtremeApi.favorites.toggle({
-                    accountId: activeAccountId,
-                    contentType: activeTab,
-                    streamId,
-                    name: stream.name,
-                    icon: stream.stream_icon || stream.cover
-                  });
-                  const nextFavorites = await window.xtremeApi.favorites.list(activeAccountId);
-                  setFavorites(nextFavorites);
-                }}
-                onInspect={(stream) => {
-                  setSelectedStream(stream);
-                  setShowInspectModal(true);
-                }}
-                onAddMultiView={activeTab === 'live' ? addMultiView : undefined}
-                onPlay={async (stream) => {
-                  if (activeTab === 'series') {
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${activeTab}-${shelfView}-${activeCategoryId}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '18px' }}
+            >
+              {featuredStream && (
+                <div className="hero-banner" style={{
+                  position: 'relative',
+                  height: '350px',
+                  borderRadius: '24px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  padding: '40px',
+                  backgroundImage: `linear-gradient(to top, rgba(7, 17, 31, 1) 0%, rgba(7, 17, 31, 0) 100%), url(${featuredStream.cover || featuredStream.stream_icon})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                  <div style={{ position: 'relative', zIndex: 2, maxWidth: '600px' }}>
+                    <h1 style={{ fontSize: '42px', margin: '0 0 12px 0', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>{featuredStream.name}</h1>
+                    <p style={{ margin: '0 0 20px 0', fontSize: '15px', color: '#cbd5e1', textShadow: '0 1px 4px rgba(0,0,0,0.8)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {featuredStream.plot || 'Sem descrição disponível.'}
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button className="primary-button" onClick={() => {
+                        if (activeTab === 'series') {
+                          setSelectedStream(featuredStream);
+                          setShowInspectModal(true);
+                        } else {
+                          playItem(featuredStream);
+                        }
+                      }}>Assistir Agora</button>
+                      <button className="ghost-button" onClick={() => {
+                        setSelectedStream(featuredStream);
+                        setShowInspectModal(true);
+                      }}>Mais Informações</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {shelfView === 'catalog' ? <CategoryList categories={categories} activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} enableSearchAll={enableSearchAll} hiddenCategories={hiddenCategories} onToggleHidden={toggleHiddenCategory} /> : null}
+              {error ? <div className="alert error">{error}</div> : null}
+              {loading ? (
+                <div className="stream-grid" style={{ opacity: 0.5 }}>
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <article className="stream-card skeleton" key={i} style={{ animation: 'pulse 1.5s infinite ease-in-out', background: 'rgba(255,255,255,0.05)', height: '300px', borderRadius: '12px' }}></article>
+                  ))}
+                </div>
+              ) : null}
+
+              {!loading && (
+                <StreamGrid
+                  contentType={activeTab}
+                  streams={featuredStream ? filteredStreams.filter(s => s !== featuredStream) : filteredStreams}
+                  favorites={favorites}
+                  nowPlaying={activeTab === 'live' ? nowPlaying : undefined}
+                  onToggleFavorite={async (stream) => {
+                    const streamId = stream.stream_id ?? stream.series_id ?? 0;
+                    await window.xtremeApi.favorites.toggle({
+                      accountId: activeAccountId,
+                      contentType: activeTab,
+                      streamId,
+                      name: stream.name,
+                      icon: stream.stream_icon || stream.cover
+                    });
+                    const nextFavorites = await window.xtremeApi.favorites.list(activeAccountId);
+                    setFavorites(nextFavorites);
+                  }}
+                  onInspect={(stream) => {
                     setSelectedStream(stream);
                     setShowInspectModal(true);
-                    return;
-                  }
-                  await playItem(stream);
-                }}
-              />
-          </>
+                  }}
+                  onAddMultiView={activeTab === 'live' ? addMultiView : undefined}
+                  onPlay={async (stream) => {
+                    if (activeTab === 'series') {
+                      setSelectedStream(stream);
+                      setShowInspectModal(true);
+                      return;
+                    }
+                    await playItem(stream);
+                  }}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
       </main>
 
@@ -418,23 +488,23 @@ export function DashboardPage() {
         onPlayCatchup={playCatchup}
       />
       {internalPlayerUrl && (
-        <InternalPlayer 
-          streamUrl={internalPlayerUrl.url} 
-          title={internalPlayerUrl.title} 
+        <InternalPlayer
+          streamUrl={internalPlayerUrl.url}
+          title={internalPlayerUrl.title}
           contentType={internalPlayerUrl.contentType}
           streamId={internalPlayerUrl.streamId}
           accountId={internalPlayerUrl.accountId}
           startProgress={internalPlayerUrl.startProgress}
-          onClose={() => setInternalPlayerUrl(undefined)} 
+          onClose={() => setInternalPlayerUrl(undefined)}
         />
       )}
       {multiViewStreams.length > 0 && (
-        <MultiViewPlayer 
+        <MultiViewPlayer
           streams={multiViewStreams}
           minimized={multiViewMinimized}
           onMinimize={() => setMultiViewMinimized(!multiViewMinimized)}
-          onClose={() => { setMultiViewStreams([]); setMultiViewMinimized(false); }} 
-          onRemoveStream={(id) => setMultiViewStreams(prev => prev.filter(s => s.id !== id))} 
+          onClose={() => { setMultiViewStreams([]); setMultiViewMinimized(false); }}
+          onRemoveStream={(id) => setMultiViewStreams(prev => prev.filter(s => s.id !== id))}
         />
       )}
     </div>

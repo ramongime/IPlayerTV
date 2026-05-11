@@ -17,6 +17,15 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
   const [error, setError] = useState<string>();
   const [isPlaying, setIsPlaying] = useState(true);
   const [isHovered, setIsHovered] = useState(true);
+  const [playerSettings, setPlayerSettings] = useState<{ defaultAudioLanguage?: string, defaultSubtitleLanguage?: string }>({});
+
+  useEffect(() => {
+    window.xtremeApi.settings.get().then((data: any) => {
+      if (data.player) {
+        setPlayerSettings(data.player);
+      }
+    });
+  }, []);
   
   let hoverTimeout: NodeJS.Timeout;
 
@@ -36,7 +45,8 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
       hls = new Hls({
         maxBufferLength: 30,
         maxMaxBufferLength: 600,
-        enableWorker: true
+        enableWorker: true,
+        renderTextTracksNatively: true
       });
       
       hls.loadSource(streamUrl);
@@ -46,6 +56,28 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
         if (startProgress && startProgress > 0) {
           video.currentTime = startProgress;
         }
+
+        // Apply audio and subtitle preferences
+        if (playerSettings.defaultAudioLanguage) {
+          const audioTrackId = hls?.audioTracks.findIndex(track => 
+            track.name.toLowerCase().includes(playerSettings.defaultAudioLanguage!.toLowerCase()) || 
+            track.lang?.toLowerCase().includes(playerSettings.defaultAudioLanguage!.toLowerCase())
+          );
+          if (audioTrackId !== undefined && audioTrackId !== -1) {
+            hls!.audioTrack = audioTrackId;
+          }
+        }
+
+        if (playerSettings.defaultSubtitleLanguage) {
+          const subtitleTrackId = hls?.subtitleTracks.findIndex(track => 
+            track.name.toLowerCase().includes(playerSettings.defaultSubtitleLanguage!.toLowerCase()) || 
+            track.lang?.toLowerCase().includes(playerSettings.defaultSubtitleLanguage!.toLowerCase())
+          );
+          if (subtitleTrackId !== undefined && subtitleTrackId !== -1) {
+            hls!.subtitleTrack = subtitleTrackId;
+          }
+        }
+
         video.play().catch((err) => setError('Falha ao reproduzir automaticamente: ' + err.message));
       });
 
@@ -106,7 +138,7 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
       }
       window.removeEventListener('keydown', handleKeydown);
     };
-  }, [streamUrl, startProgress]);
+  }, [streamUrl, startProgress, playerSettings]);
 
   // Progress Tracking
   useEffect(() => {

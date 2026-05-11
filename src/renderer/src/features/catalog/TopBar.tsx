@@ -43,12 +43,41 @@ export function TopBar({ search, shelfView, activeTab, onSearchChange, onShelfCh
         style={{ flex: 1, minWidth: '200px' }}
       />
 
-      <div className="segmented-control">
-        <button className={`ghost-button ${shelfView === 'catalog' ? 'segmented-active' : ''}`} onClick={() => onShelfChange('catalog')}>Catálogo</button>
-        <button className={`ghost-button ${shelfView === 'favorites' ? 'segmented-active' : ''}`} onClick={() => onShelfChange('favorites')}>Favoritos</button>
-        <button className={`ghost-button ${shelfView === 'history' ? 'segmented-active' : ''}`} onClick={() => onShelfChange('history')}>Histórico</button>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginLeft: '16px' }}>
+        <button
+          className={`ghost-button ${shelfView === 'catalog' ? 'segmented-active' : ''}`}
+          onClick={() => onShelfChange('catalog')}
+          title="Catálogo"
+          style={{ padding: '8px', border: 'none', background: 'transparent', color: shelfView === 'catalog' ? '#4cc9f0' : '#9db2c7' }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>
+        </button>
+        <button
+          className={`ghost-button ${shelfView === 'favorites' ? 'segmented-active' : ''}`}
+          onClick={() => onShelfChange('favorites')}
+          title="Favoritos"
+          style={{ padding: '8px', border: 'none', background: 'transparent', color: shelfView === 'favorites' ? '#4cc9f0' : '#9db2c7' }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+        </button>
+        <button
+          className={`ghost-button ${shelfView === 'history' ? 'segmented-active' : ''}`}
+          onClick={() => onShelfChange('history')}
+          title="Histórico"
+          style={{ padding: '8px', border: 'none', background: 'transparent', color: shelfView === 'history' ? '#4cc9f0' : '#9db2c7' }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+        </button>
+        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }}></div>
+        <button
+          className="ghost-button"
+          onClick={onOpenSettings}
+          title="Configurações"
+          style={{ padding: '8px', border: 'none', background: 'transparent', color: '#9db2c7' }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+        </button>
       </div>
-      <button className="ghost-button" onClick={onOpenSettings}>Configurações</button>
     </header>
   );
 }
