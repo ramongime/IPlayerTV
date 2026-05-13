@@ -11,6 +11,7 @@ interface AppSettings {
   player?: {
     defaultAudioLanguage?: string;
     defaultSubtitleLanguage?: string;
+    splitAudio?: boolean;
   };
   tmdbApiKey?: string;
 }
@@ -23,7 +24,8 @@ const store = new Store<AppSettings>({
     },
     player: {
       defaultAudioLanguage: '',
-      defaultSubtitleLanguage: ''
+      defaultSubtitleLanguage: '',
+      splitAudio: false
     }
   }
 });

@@ -19,7 +19,7 @@ export function StreamGrid({ streams, favorites, nowPlaying, onToggleFavorite, o
 
   return (
     <VirtuosoGrid
-      style={{ height: 'calc(100vh - 200px)', width: '100%' }}
+      style={{ flex: 1, minHeight: '400px', width: '100%' }}
       data={streams}
       listClassName="stream-grid"
       itemContent={(index, stream) => {

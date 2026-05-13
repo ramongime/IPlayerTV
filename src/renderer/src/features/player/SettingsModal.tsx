@@ -10,7 +10,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
   const [settings, setSettings] = useState({ 
     externalPlayers: { vlcPath: '', mpvPath: '' }, 
     stream: { probeTimeoutMs: 3500 }, 
-    player: { defaultAudioLanguage: '', defaultSubtitleLanguage: '' },
+    player: { defaultAudioLanguage: '', defaultSubtitleLanguage: '', splitAudio: false },
     tmdbApiKey: '' 
   });
   const { enableSearchAll, setEnableSearchAll } = useAppStore();
@@ -20,7 +20,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
       window.xtremeApi.settings.get().then((data: any) => {
         setSettings({
           ...data,
-          player: data.player || { defaultAudioLanguage: '', defaultSubtitleLanguage: '' }
+          player: data.player || { defaultAudioLanguage: '', defaultSubtitleLanguage: '', splitAudio: false }
         });
       });
     }
@@ -71,6 +71,14 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
               onChange={(e) => setEnableSearchAll(e.target.checked)}
             />
             Habilitar a categoria TODOS nas Séries e Filmes
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '10px 0' }}>
+            <input
+              type="checkbox"
+              checked={settings.player?.splitAudio || false}
+              onChange={(e) => setSettings({ ...settings, player: { ...settings.player, splitAudio: e.target.checked } })}
+            />
+            Áudio Split L/R no Multi-View (esquerdo → fone esquerdo, direito → fone direito)
           </label>
         </div>
         <div className="modal-actions">
