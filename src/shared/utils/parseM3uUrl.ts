@@ -1,9 +1,9 @@
 /**
  * Parses an M3U URL into Xtream credentials.
- * 
+ *
  * Most IPTV M3U URLs follow this pattern:
  *   http://server:port/get.php?username=USER&password=PASS&type=m3u_plus&output=ts
- * 
+ *
  * This parser extracts server, username and password from such URLs.
  */
 export function parseM3uUrl(url: string): { server: string; username: string; password: string; output: 'm3u8' | 'ts' } | null {

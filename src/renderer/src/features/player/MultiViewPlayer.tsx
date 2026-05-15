@@ -51,8 +51,8 @@ const HlsVideo = forwardRef<HlsVideoHandle, { url: string; active: boolean; mute
     }, [url]);
 
     return (
-      <div 
-        className={`multiview-cell ${active ? 'active' : ''}`} 
+      <div
+        className={`multiview-cell ${active ? 'active' : ''}`}
         onClick={onClick}
         style={{ width: '100%', height: '100%' }}
       >
@@ -203,13 +203,13 @@ export function MultiViewPlayer({ streams, minimized, onMinimize, onClose, onRem
       <div className="multiview-grid" style={gridStyle}>
         {streams.map((stream, idx) => (
           <div key={stream.id} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
-            <HlsVideo 
+            <HlsVideo
               ref={(el) => { videoRefs.current[idx] = el; }}
               key={`${stream.id}-${audioGeneration}`}
-              url={stream.url} 
-              active={activeIndex === idx} 
+              url={stream.url}
+              active={activeIndex === idx}
               muted={shouldSplit ? false : activeIndex !== idx}
-              onClick={() => setActiveIndex(idx)} 
+              onClick={() => setActiveIndex(idx)}
             />
             <div className="multiview-overlay-info">
               <span>{stream.title}</span>

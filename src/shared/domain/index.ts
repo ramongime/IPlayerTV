@@ -99,7 +99,6 @@ export interface EpgProgramme {
 
 export type NowPlayingMap = Record<number, string>;
 
-
 export interface Favorite {
   accountId: string;
   contentType: ContentType;

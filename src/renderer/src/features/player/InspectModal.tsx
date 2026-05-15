@@ -32,8 +32,6 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
     return Object.keys(groupedEpisodes).map(Number).sort((a, b) => a - b);
   }, [groupedEpisodes]);
 
-
-
   useEffect(() => {
     if (!open || !accountId || !stream) return;
     const streamId = stream.stream_id ?? stream.series_id;

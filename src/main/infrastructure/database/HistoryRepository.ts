@@ -1,4 +1,4 @@
-import type { ContentType, HistoryItem } from '@shared/domain';
+import type { HistoryItem } from '@shared/domain';
 import type { IHistoryRepository } from '../../core/repositories/IHistoryRepository';
 import { getDatabase } from './DatabaseConnection';
 
@@ -10,7 +10,7 @@ export class HistoryRepository implements IHistoryRepository {
 
   add(payload: Pick<HistoryItem, 'accountId' | 'contentType' | 'streamId' | 'name' | 'streamUrl' | 'progress' | 'duration'>): void {
     const db = getDatabase();
-    
+
     // Remove if exists to move to top
     db.prepare('DELETE FROM history WHERE accountId = ? AND contentType = ? AND streamId = ?')
       .run(payload.accountId, payload.contentType, payload.streamId);
@@ -29,7 +29,7 @@ export class HistoryRepository implements IHistoryRepository {
   upsertProgress(accountId: string, streamId: number, progress: number, duration: number): void {
     const db = getDatabase();
     db.prepare(`
-      UPDATE history 
+      UPDATE history
       SET progress = ?, duration = ?, playedAt = ?
       WHERE accountId = ? AND streamId = ?
     `).run(progress, duration, new Date().toISOString(), accountId, streamId);

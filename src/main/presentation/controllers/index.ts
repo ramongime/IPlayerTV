@@ -60,7 +60,6 @@ export function registerControllers() {
     return tmdbProvider.fetchInfo(name, type, config.tmdbApiKey);
   });
 
-
   // --- Xtream ---
 
   ipcMain.handle('xtream:authenticate', (_, account) => xtreamProvider.authenticate(account));

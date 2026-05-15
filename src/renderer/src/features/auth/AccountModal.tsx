@@ -192,4 +192,3 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
     </div>
   );
 }
-

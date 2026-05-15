@@ -7,11 +7,11 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
-  const [settings, setSettings] = useState({ 
-    externalPlayers: { vlcPath: '', mpvPath: '' }, 
-    stream: { probeTimeoutMs: 3500 }, 
+  const [settings, setSettings] = useState({
+    externalPlayers: { vlcPath: '', mpvPath: '' },
+    stream: { probeTimeoutMs: 3500 },
     player: { defaultAudioLanguage: '', defaultSubtitleLanguage: '', splitAudio: false },
-    tmdbApiKey: '' 
+    tmdbApiKey: ''
   });
   const { enableSearchAll, setEnableSearchAll } = useAppStore();
 

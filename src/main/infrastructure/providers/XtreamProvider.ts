@@ -92,7 +92,7 @@ export class XtreamProvider implements IXtreamProvider {
     });
 
     const result: Record<string, EpgProgramme[]> = {};
-    
+
     if (data && Array.isArray(data.epg_listings)) {
       for (const channel of data.epg_listings) {
         if (channel && channel.id && Array.isArray(channel.epg_listings)) {
@@ -106,7 +106,7 @@ export class XtreamProvider implements IXtreamProvider {
         }
       }
     }
-    
+
     return result;
   }
 
@@ -116,7 +116,7 @@ export class XtreamProvider implements IXtreamProvider {
 
     for (let i = 0; i < streamIds.length; i += CONCURRENCY) {
       const batch = streamIds.slice(i, i + CONCURRENCY);
-      const results = await Promise.allSettled(
+      await Promise.allSettled(
         batch.map(async (streamId) => {
           const items = await this.shortEpg(account, streamId, 2);
           // Find the programme that is currently airing or the first one
@@ -212,11 +212,11 @@ export class XtreamProvider implements IXtreamProvider {
   resolveCatchupUrl(account: Account, streamId: number, startRaw: string, durationMinutes: number, extension?: string) {
     const server = account.server.replace(/\/$/, '');
     const ext = extension || 'm3u8';
-    
+
     // Parse the start time "YYYY-MM-DD HH:MM:SS" into "YYYY-MM-DD:HH-MM"
     const dateObj = new Date(startRaw.replace(' ', 'T'));
     const pad = (n: number) => String(n).padStart(2, '0');
-    
+
     let startTime = startRaw; // fallback
     if (!isNaN(dateObj.getTime())) {
       const Y = dateObj.getFullYear();

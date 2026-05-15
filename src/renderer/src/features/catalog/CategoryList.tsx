@@ -92,4 +92,3 @@ export function CategoryList({ categories, activeCategoryId, onSelect, enableSea
     </div>
   );
 }
-

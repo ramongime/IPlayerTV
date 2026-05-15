@@ -58,4 +58,3 @@ export function StreamGrid({ streams, favorites, nowPlaying, onToggleFavorite, o
     />
   );
 }
-

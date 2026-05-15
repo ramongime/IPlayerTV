@@ -15,7 +15,6 @@ interface InternalPlayerProps {
 export function InternalPlayer({ streamUrl, title, contentType, streamId, accountId, startProgress, onClose }: InternalPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string>();
-  const [isPlaying, setIsPlaying] = useState(true);
   const [isHovered, setIsHovered] = useState(true);
   const [playerSettings, setPlayerSettings] = useState<{ defaultAudioLanguage?: string, defaultSubtitleLanguage?: string }>({});
 
@@ -26,7 +25,7 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
       }
     });
   }, []);
-  
+
   let hoverTimeout: NodeJS.Timeout;
 
   const handleMouseMove = () => {
@@ -48,10 +47,10 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
         enableWorker: true,
         renderTextTracksNatively: true
       });
-      
+
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
-      
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (startProgress && startProgress > 0) {
           video.currentTime = startProgress;
@@ -59,8 +58,8 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
 
         // Apply audio and subtitle preferences
         if (playerSettings.defaultAudioLanguage) {
-          const audioTrackId = hls?.audioTracks.findIndex(track => 
-            track.name.toLowerCase().includes(playerSettings.defaultAudioLanguage!.toLowerCase()) || 
+          const audioTrackId = hls?.audioTracks.findIndex(track =>
+            track.name.toLowerCase().includes(playerSettings.defaultAudioLanguage!.toLowerCase()) ||
             track.lang?.toLowerCase().includes(playerSettings.defaultAudioLanguage!.toLowerCase())
           );
           if (audioTrackId !== undefined && audioTrackId !== -1) {
@@ -69,8 +68,8 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
         }
 
         if (playerSettings.defaultSubtitleLanguage) {
-          const subtitleTrackId = hls?.subtitleTracks.findIndex(track => 
-            track.name.toLowerCase().includes(playerSettings.defaultSubtitleLanguage!.toLowerCase()) || 
+          const subtitleTrackId = hls?.subtitleTracks.findIndex(track =>
+            track.name.toLowerCase().includes(playerSettings.defaultSubtitleLanguage!.toLowerCase()) ||
             track.lang?.toLowerCase().includes(playerSettings.defaultSubtitleLanguage!.toLowerCase())
           );
           if (subtitleTrackId !== undefined && subtitleTrackId !== -1) {
@@ -128,7 +127,7 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
         else document.exitFullscreen();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeydown);
 
     return () => {
@@ -157,8 +156,8 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
   }, [accountId, streamId, contentType]);
 
   return (
-    <div 
-      className="internal-player-overlay" 
+    <div
+      className="internal-player-overlay"
       onMouseMove={handleMouseMove}
       onClick={() => setIsHovered(true)}
     >
@@ -181,7 +180,7 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
         {error && (
           <div className="internal-player-error">
             <p>{error}</p>
-            <button className="primary-button" onClick={() => { setError(undefined); if(videoRef.current) videoRef.current.load(); }}>
+            <button className="primary-button" onClick={() => { setError(undefined); if (videoRef.current) videoRef.current.load(); }}>
               Tentar Novamente
             </button>
           </div>
@@ -192,8 +191,6 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
           className={`internal-player-video ${contentType === 'live' ? 'is-live' : ''}`}
           controls={isHovered}
           autoPlay
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
           onClick={(e) => {
             e.stopPropagation();
             if (videoRef.current?.paused) videoRef.current?.play();

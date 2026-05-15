@@ -1,4 +1,4 @@
-import type { ContentType, Favorite } from '@shared/domain';
+import type { Favorite } from '@shared/domain';
 import type { IFavoriteRepository } from '../../core/repositories/IFavoriteRepository';
 import { getDatabase } from './DatabaseConnection';
 
@@ -10,7 +10,7 @@ export class FavoriteRepository implements IFavoriteRepository {
 
   toggle(payload: Pick<Favorite, 'accountId' | 'contentType' | 'streamId' | 'name' | 'icon'>): boolean {
     const db = getDatabase();
-    
+
     const existing = db.prepare('SELECT 1 FROM favorites WHERE accountId = ? AND contentType = ? AND streamId = ?')
       .get(payload.accountId, payload.contentType, payload.streamId);
 

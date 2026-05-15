@@ -31,7 +31,7 @@ export class TmdbProvider {
       if (data.results && data.results.length > 0) {
         // Take the first result
         const result = data.results[0];
-        
+
         const info: TmdbInfo = {
           posterPath: result.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : undefined,
           backdropPath: result.backdrop_path ? `https://image.tmdb.org/t/p/w1280${result.backdrop_path}` : undefined,

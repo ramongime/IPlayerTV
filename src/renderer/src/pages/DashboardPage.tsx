@@ -27,7 +27,6 @@ export function DashboardPage() {
     setLoading,
     setError,
     enableSearchAll,
-    setEnableSearchAll,
     hiddenCategories,
     toggleHiddenCategory,
     loadHiddenCategories

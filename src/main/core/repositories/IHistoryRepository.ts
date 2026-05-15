@@ -1,4 +1,4 @@
-import type { ContentType, HistoryItem } from '@shared/domain';
+import type { HistoryItem } from '@shared/domain';
 
 export interface IHistoryRepository {
   list(accountId: string): HistoryItem[];

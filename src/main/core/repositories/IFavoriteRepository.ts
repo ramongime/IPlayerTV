@@ -1,4 +1,4 @@
-import type { ContentType, Favorite } from '@shared/domain';
+import type { Favorite } from '@shared/domain';
 
 export interface IFavoriteRepository {
   list(accountId: string): Favorite[];
