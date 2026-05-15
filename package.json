@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "description": "Desktop IPTV player with Xtream Codes support, favorites, history, series episodes, EPG and external player integration.",
+  "author": "Ramon Gimenes <ramongimenes@gmail.com>",
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
@@ -69,7 +70,8 @@
       "target": [
         "AppImage",
         "deb"
-      ]
+      ],
+      "maintainer": "Ramon Gimenes <ramongimenes@gmail.com>"
     }
   }
 }
