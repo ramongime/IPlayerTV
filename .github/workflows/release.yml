@@ -27,6 +27,16 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Setup Python (Windows only)
+        if: matrix.os == 'windows-latest'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install setuptools (Windows only)
+        if: matrix.os == 'windows-latest'
+        run: pip install setuptools
+
       - name: Install dependencies
         run: npm install
 
