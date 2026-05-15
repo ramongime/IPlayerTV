@@ -10,6 +10,7 @@ function createWindow() {
     minWidth: 1200,
     minHeight: 720,
     backgroundColor: '#0b1220',
+    icon: path.join(__dirname, '../../assets/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -32,7 +33,22 @@ function createWindow() {
   });
 }
 
+if (process.platform === 'darwin') {
+  app.name = 'IPlayerTV';
+}
+
 app.whenReady().then(() => {
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(path.join(__dirname, '../../assets/icon.png'));
+  }
+
+  app.setAboutPanelOptions({
+    applicationName: 'IPlayerTV',
+    applicationVersion: app.getVersion(),
+    iconPath: path.join(__dirname, '../../assets/icon.png'),
+    copyright: 'Copyright © 2026 Ramon Gimenes'
+  });
+
   registerControllers();
   createWindow();
 
