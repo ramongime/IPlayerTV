@@ -1,6 +1,6 @@
 {
   "name": "iplayertv",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Desktop IPTV player with Xtream Codes support, favorites, history, series episodes, EPG and external player integration.",
   "author": "Ramon Gimenes <ramongimenes@gmail.com>",
