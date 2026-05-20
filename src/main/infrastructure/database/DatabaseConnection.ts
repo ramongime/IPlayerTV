@@ -46,21 +46,13 @@ function migrate(database: Database.Database) {
       streamId INTEGER NOT NULL,
       name TEXT NOT NULL,
       streamUrl TEXT NOT NULL,
-      playedAt TEXT NOT NULL
+      playedAt TEXT NOT NULL,
+      progress INTEGER,
+      duration INTEGER
     );
 
     CREATE INDEX IF NOT EXISTS history_account_playedAt_ix ON history(accountId, playedAt DESC);
-  `);
 
-  // Migrations for existing DBs
-  try {
-    database.exec('ALTER TABLE history ADD COLUMN progress INTEGER;');
-    database.exec('ALTER TABLE history ADD COLUMN duration INTEGER;');
-  } catch (e) {
-    // Columns already exist
-  }
-
-  database.exec(`
     CREATE TABLE IF NOT EXISTS watched (
       accountId TEXT NOT NULL,
       contentType TEXT NOT NULL,

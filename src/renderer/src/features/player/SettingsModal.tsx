@@ -192,6 +192,41 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
             </label>
           </div>
 
+          {/* Cache Management Section */}
+          <div style={{
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '14px',
+            padding: '16px',
+            background: 'rgba(255,255,255,0.02)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: 600 }}>{t('settingsModal.clearCache', 'Limpar Dados')}</span>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                    {t('settingsModal.clearCacheDesc', 'Apagar Histórico de visualização e itens marcados como Visto')}
+                  </div>
+                </div>
+              </div>
+              <button
+                className="ghost-button danger"
+                onClick={async () => {
+                  if (confirm(t('settingsModal.confirmClearCache', 'Tem certeza que deseja apagar todo o histórico e os itens vistos?'))) {
+                    await window.xtremeApi.watched.clear();
+                    alert(t('settingsModal.cacheCleared', 'Dados apagados com sucesso!'));
+                    window.location.reload();
+                  }
+                }}
+                style={{ padding: '6px 12px', fontSize: '13px', border: '1px solid rgba(255, 95, 95, 0.4)' }}
+              >
+                {t('settingsModal.clearButton', 'Apagar Dados')}
+              </button>
+            </div>
+          </div>
+
           {/* Parental PIN Section */}
           <div style={{
             border: '1px solid rgba(255,255,255,0.08)',

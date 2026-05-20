@@ -26,7 +26,8 @@ contextBridge.exposeInMainWorld('xtremeApi', {
   },
   watched: {
     list: (accountId: string) => ipcRenderer.invoke('watched:list', accountId),
-    toggle: (accountId: string, contentType: string, streamId: number) => ipcRenderer.invoke('watched:toggle', accountId, contentType, streamId)
+    toggle: (accountId: string, contentType: string, streamId: number) => ipcRenderer.invoke('watched:toggle', accountId, contentType, streamId),
+    clear: (accountId?: string) => ipcRenderer.invoke('watched:clear', accountId)
   },
   tmdb: {
     fetchInfo: (name: string, type: 'movie' | 'series') => ipcRenderer.invoke('tmdb:fetchInfo', name, type)

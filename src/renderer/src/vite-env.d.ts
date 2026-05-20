@@ -37,6 +37,7 @@ declare global {
       watched: {
         list: (accountId: string) => Promise<Array<{ contentType: string; streamId: number }>>;
         toggle: (accountId: string, contentType: string, streamId: number) => Promise<boolean>;
+        clear: (accountId?: string) => Promise<void>;
       };
       tmdb: {
         fetchInfo: (name: string, type: 'movie' | 'series') => Promise<import('@shared/domain').TmdbInfo | undefined>;
