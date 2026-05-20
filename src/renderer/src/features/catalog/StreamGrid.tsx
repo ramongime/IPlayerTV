@@ -4,9 +4,11 @@ interface StreamGridProps {
   contentType: ContentType;
   streams: StreamItem[];
   favorites: Favorite[];
+  watched: Array<{ contentType: string, streamId: number }>;
   nowPlaying?: Record<number, string>;
   isFavoriting?: boolean;
   onToggleFavorite: (stream: StreamItem) => void;
+  onToggleWatched?: (stream: StreamItem) => void;
   onPlay: (stream: StreamItem) => void;
   onInspect?: (stream: StreamItem) => void;
   onAddMultiView?: (stream: StreamItem) => void;
@@ -14,8 +16,9 @@ interface StreamGridProps {
 
 import { VirtuosoGrid } from 'react-virtuoso';
 
-export function StreamGrid({ streams, favorites, nowPlaying, onToggleFavorite, onPlay, onInspect, onAddMultiView, contentType }: StreamGridProps) {
+export function StreamGrid({ streams, favorites, watched, nowPlaying, onToggleFavorite, onToggleWatched, onPlay, onInspect, onAddMultiView, contentType }: StreamGridProps) {
   const favoriteKey = new Set(favorites.map((item) => `${item.contentType}:${item.streamId}`));
+  const watchedKey = new Set(watched?.map((item) => `${item.contentType}:${item.streamId}`));
 
   return (
     <VirtuosoGrid
@@ -25,6 +28,7 @@ export function StreamGrid({ streams, favorites, nowPlaying, onToggleFavorite, o
       itemContent={(index, stream) => {
         const streamId = stream.stream_id ?? stream.series_id ?? 0;
         const isFavorite = favoriteKey.has(`${contentType}:${streamId}`);
+        const isWatched = watchedKey?.has(`${contentType}:${streamId}`);
         const currentProgramme = contentType === 'live' && nowPlaying ? nowPlaying[streamId] : undefined;
         return (
           <article className="stream-card">
@@ -49,6 +53,11 @@ export function StreamGrid({ streams, favorites, nowPlaying, onToggleFavorite, o
               )}
               {onInspect && (
                 <button className="ghost-button" onClick={() => onInspect(stream)}>{contentType === 'live' ? 'EPG' : 'Detalhes'}</button>
+              )}
+              {onToggleWatched && contentType !== 'live' && (
+                <button className={`ghost-button ${isWatched ? 'active' : ''}`} style={isWatched ? { color: '#13c0d7', borderColor: '#13c0d7' } : {}} onClick={() => onToggleWatched(stream)}>
+                  {isWatched ? '✓ Visto' : 'Marcar Visto'}
+                </button>
               )}
               <button className="ghost-button" onClick={() => onToggleFavorite(stream)}>{isFavorite ? '★' : '☆'}</button>
             </div>

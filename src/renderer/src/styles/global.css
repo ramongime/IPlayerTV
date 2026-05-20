@@ -2,12 +2,55 @@
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: #e5edf7;
   background: #07111f;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 body, html, #root { margin: 0; height: 100vh; overflow: hidden; background: linear-gradient(180deg, #07111f 0%, #0b1220 100%); }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
+
+/* Force dark mode on all native form controls (fixes Windows white flashes) */
+input, select, textarea, option {
+  background-color: rgba(255,255,255,0.04);
+  color: #e5edf7;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+}
+
+select option {
+  background-color: #0f172a;
+  color: #e5edf7;
+}
+
+/* Prevent white flash on button active/focus states (Windows) */
+button:active {
+  background-color: rgba(255,255,255,0.08);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid rgba(76, 201, 240, 0.5);
+  outline-offset: -1px;
+}
+
+/* Scrollbar styling for Windows */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.25);
+}
 
 .app-shell {
   display: grid;

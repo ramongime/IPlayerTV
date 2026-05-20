@@ -53,6 +53,7 @@ export function DashboardPage() {
     categories,
     favorites,
     history,
+    watched,
     streams,
     nowPlaying,
     categoryToLoad,
@@ -75,6 +76,10 @@ export function DashboardPage() {
   const loadAccounts = async () => {
     const result = await window.xtremeApi.accounts.list();
     setAccounts(result);
+    // Se já tem conta cadastrada, fecha a sidebar automaticamente
+    if (result.length > 0) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const loadSettings = async () => {
@@ -468,6 +473,7 @@ export function DashboardPage() {
                   contentType={activeTab}
                   streams={featuredStream ? filteredStreams.filter(s => s !== featuredStream) : filteredStreams}
                   favorites={favorites}
+                  watched={watched}
                   nowPlaying={activeTab === 'live' ? nowPlaying : undefined}
                   onToggleFavorite={async (stream) => {
                     const streamId = stream.stream_id ?? stream.series_id ?? 0;
@@ -478,6 +484,11 @@ export function DashboardPage() {
                       name: stream.name,
                       icon: stream.stream_icon || stream.cover
                     });
+                    invalidateLibrary();
+                  }}
+                  onToggleWatched={async (stream) => {
+                    const streamId = stream.stream_id ?? stream.series_id ?? 0;
+                    await window.xtremeApi.watched.toggle(activeAccountId, activeTab, streamId);
                     invalidateLibrary();
                   }}
                   onInspect={(stream) => {

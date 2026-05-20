@@ -14,13 +14,14 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   const baseDataQuery = useQuery({
     queryKey: ['library-base', accountId, activeTab],
     queryFn: async () => {
-      if (!accountId) return { categories: [], favorites: [], history: [] };
-      const [categories, favorites, history] = await Promise.all([
+      if (!accountId) return { categories: [], favorites: [], history: [], watched: [] };
+      const [categories, favorites, history, watched] = await Promise.all([
         window.xtremeApi.xtream.categories(accountId, activeTab),
         window.xtremeApi.favorites.list(accountId),
-        window.xtremeApi.history.list(accountId)
+        window.xtremeApi.history.list(accountId),
+        window.xtremeApi.watched.list(accountId)
       ]);
-      return { categories, favorites, history };
+      return { categories, favorites, history, watched };
     },
     enabled: !!accountId,
     staleTime: 5 * 60 * 1000,
@@ -29,6 +30,7 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   const categories = baseDataQuery.data?.categories ?? [];
   const favorites = baseDataQuery.data?.favorites ?? [];
   const history = baseDataQuery.data?.history ?? [];
+  const watched = baseDataQuery.data?.watched ?? [];
 
   let categoryToLoad = activeCategoryId;
   if (categoryToLoad === 'all' && !enableSearchAll && categories.length > 0) {
@@ -84,6 +86,7 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
     categories,
     favorites,
     history,
+    watched,
     streams,
     nowPlaying,
     categoryToLoad,

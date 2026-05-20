@@ -59,4 +59,14 @@ function migrate(database: Database.Database) {
   } catch (e) {
     // Columns already exist
   }
+
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS watched (
+      accountId TEXT NOT NULL,
+      contentType TEXT NOT NULL,
+      streamId INTEGER NOT NULL,
+      createdAt TEXT NOT NULL,
+      PRIMARY KEY (accountId, contentType, streamId)
+    );
+  `);
 }
