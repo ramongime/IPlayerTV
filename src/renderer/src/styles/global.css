@@ -310,6 +310,7 @@ button { cursor: pointer; }
   display: grid;
   place-items: center;
   padding: 16px;
+  z-index: 50;
 }
 
 .modal {
@@ -728,4 +729,167 @@ input:focus-visible,
   outline-offset: 2px !important;
   transform: scale(1.02);
   z-index: 10;
+}
+
+/* EPG Grid Styles */
+.epg-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background-color: #0b1220;
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+  overflow: hidden;
+  position: relative;
+}
+
+.epg-header {
+  display: flex;
+  background-color: #1e293b;
+  border-bottom: 1px solid #334155;
+  height: 50px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.epg-corner {
+  width: 120px;
+  min-width: 120px;
+  background-color: #0f172a;
+  border-right: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: #94a3b8;
+  z-index: 20;
+  position: sticky;
+  left: 0;
+}
+
+.epg-timeline {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.epg-time-marker {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-left: 1px solid #334155;
+  padding-left: 8px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.epg-body {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.epg-row {
+  display: flex;
+  height: 60px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.epg-channel-cell {
+  width: 120px;
+  min-width: 120px;
+  background-color: #0f172a;
+  border-right: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+
+.epg-channel-logo {
+  max-width: 40px;
+  max-height: 40px;
+  margin-right: 10px;
+  border-radius: 4px;
+}
+
+.epg-channel-name {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.epg-programs-container {
+  flex: 1;
+  position: relative;
+  min-width: calc(24 * 60 * 5px); /* 24 hours * 60 mins * 5px per min */
+  background-size: 150px 100%;
+  background-image: linear-gradient(to right, #1e293b 1px, transparent 1px);
+}
+
+.epg-program {
+  position: absolute;
+  height: calc(100% - 10px);
+  top: 5px;
+  background-color: #334155;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  border: 1px solid #475569;
+}
+
+.epg-program:hover {
+  background-color: #475569;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transform: translateY(-2px);
+}
+
+.epg-program.now-playing {
+  background-color: #0ea5e9;
+  border-color: #38bdf8;
+}
+
+.epg-program.now-playing:hover {
+  background-color: #0284c7;
+}
+
+.epg-program.has-archive {
+  border-left: 4px solid #f59e0b;
+}
+
+.epg-program-title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #f8fafc;
+}
+
+.epg-program-time {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+.epg-now-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #ef4444;
+  z-index: 15;
+  pointer-events: none;
 }

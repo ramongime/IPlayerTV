@@ -14,7 +14,8 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webSecurity: false // Necessário para burlar CORS em servidores Xtream/M3U no player HLS
     }
   });
 

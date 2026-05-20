@@ -189,11 +189,17 @@ export class XtreamProvider implements IXtreamProvider {
     };
   }
 
-  private buildStreamCandidates(account: Account, contentType: ContentType, streamId: number, extension?: string) {
+  private buildStreamCandidates(account: Account, contentType: ContentType, streamId: number, extension?: string, forceExtension?: boolean) {
     const server = account.server.replace(/\/$/, '');
-    const exts = contentType === 'live'
-      ? Array.from(new Set([account.output, 'm3u8', 'ts']))
-      : Array.from(new Set([extension || 'mp4', 'mkv', 'mp4']));
+    let exts: string[];
+    
+    if (forceExtension && extension) {
+      exts = [extension];
+    } else {
+      exts = contentType === 'live'
+        ? Array.from(new Set([account.output, 'm3u8', 'ts']))
+        : Array.from(new Set([extension || 'mp4', 'mkv', 'mp4']));
+    }
 
     if (contentType === 'live') {
       return exts.flatMap((ext) => [
@@ -230,9 +236,9 @@ export class XtreamProvider implements IXtreamProvider {
     return `${server}/timeshift/${account.username}/${account.password}/${durationMinutes}/${startTime}/${streamId}.${ext}`;
   }
 
-  async resolveBestStreamUrl(account: Account, contentType: ContentType, streamId: number, extension?: string) {
+  async resolveBestStreamUrl(account: Account, contentType: ContentType, streamId: number, extension?: string, forceExtension?: boolean) {
     const timeoutMs = this.getTimeoutMs();
-    const candidates = this.buildStreamCandidates(account, contentType, streamId, extension);
+    const candidates = this.buildStreamCandidates(account, contentType, streamId, extension, forceExtension);
 
     for (const url of candidates) {
       const ok = await this.canOpen(url, timeoutMs, account.userAgent);

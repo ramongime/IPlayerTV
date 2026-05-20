@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Account } from '@shared/domain';
 import { parseM3uUrl } from '@shared/utils/parseM3uUrl';
+import { useTranslation } from 'react-i18next';
 
 interface AccountModalProps {
   open: boolean;
@@ -47,6 +48,7 @@ const emptyForm: FormState = {
 };
 
 export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: AccountModalProps) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [inputMode, setInputMode] = useState<'xtream' | 'm3u'>('xtream');
@@ -116,7 +118,7 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
   return (
     <div className="modal-backdrop">
       <div className="modal">
-        <h2>{isEdit ? 'Editar conta' : 'Nova conta'}</h2>
+        <h2>{isEdit ? t('common.editAccount') : t('common.newAccount')}</h2>
 
         {!isEdit && (
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
@@ -125,14 +127,14 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
               onClick={() => setInputMode('xtream')}
               style={{ flex: 1 }}
             >
-              Xtream (Usuário/Senha)
+              Xtream (User/Pass)
             </button>
             <button
               className={inputMode === 'm3u' ? 'primary-button' : 'ghost-button'}
               onClick={() => setInputMode('m3u')}
               style={{ flex: 1 }}
             >
-              URL M3U
+              M3U URL
             </button>
           </div>
         )}
@@ -148,9 +150,9 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
             />
             {m3uError && <p style={{ color: '#ff8585', fontSize: '0.85rem', margin: '0' }}>{m3uError}</p>}
             <button className="primary-button" onClick={handleM3uParse}>
-              Extrair dados da URL
+              Extract
             </button>
-            <input placeholder="Nome da conta (opcional)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <input placeholder="Name (optional)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <select value={form.player} onChange={(e) => setForm({ ...form, player: e.target.value as FormState['player'] })}>
               <option value="internal">Player Interno (Recomendado)</option>
               <option value="vlc">VLC</option>
@@ -160,32 +162,32 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
           </div>
         ) : (
           <div className="form-grid">
-            <input placeholder="Nome da conta" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <input placeholder="Servidor ex: https://meu-servidor.com:443" value={form.server} onChange={(e) => setForm({ ...form, server: e.target.value })} />
-            <input placeholder="Usuário" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
-            <input placeholder="Senha" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <input placeholder="Server e.g. https://server.com:443" value={form.server} onChange={(e) => setForm({ ...form, server: e.target.value })} />
+            <input placeholder="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+            <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             <select value={form.output} onChange={(e) => setForm({ ...form, output: e.target.value as 'm3u8' | 'ts' })}>
               <option value="m3u8">m3u8</option>
               <option value="ts">ts</option>
             </select>
             <select value={form.player} onChange={(e) => setForm({ ...form, player: e.target.value as FormState['player'] })}>
-              <option value="internal">Player Interno (Recomendado)</option>
+              <option value="internal">Internal Player (Recommended)</option>
               <option value="vlc">VLC</option>
               <option value="mpv">mpv</option>
-              <option value="browser">Navegador (Browser)</option>
+              <option value="browser">Browser</option>
             </select>
-            <input placeholder="User-Agent opcional" value={form.userAgent} onChange={(e) => setForm({ ...form, userAgent: e.target.value })} />
+            <input placeholder="User-Agent optional" value={form.userAgent} onChange={(e) => setForm({ ...form, userAgent: e.target.value })} />
           </div>
         )}
 
         <div className="modal-actions">
-          <button className="ghost-button" onClick={onClose}>Cancelar</button>
+          <button className="ghost-button" onClick={onClose}>{t('common.cancel')}</button>
           <button
             className="primary-button"
             disabled={saving}
             onClick={handleSubmit}
           >
-            {saving ? 'Salvando...' : isEdit ? 'Atualizar conta' : 'Salvar conta'}
+            {saving ? '...' : isEdit ? t('common.editAccount') : t('common.save')}
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AccountModal } from '@/features/auth/AccountModal';
 import { CategoryList } from '@/features/catalog/CategoryList';
+import { EpgGrid } from '@/features/catalog/EpgGrid';
 import { InspectModal } from '@/features/player/InspectModal';
 import { InternalPlayer } from '@/features/player/InternalPlayer';
 import { MultiViewPlayer } from '@/features/player/MultiViewPlayer';
@@ -9,22 +10,23 @@ import { SettingsModal } from '@/features/player/SettingsModal';
 import { Sidebar } from '@/features/auth/Sidebar';
 import { StreamGrid } from '@/features/catalog/StreamGrid';
 import { TopBar } from '@/features/catalog/TopBar';
-import type { Account, Category, Episode, Favorite, HistoryItem, ShelfView, StreamItem, ContentType, EpgProgramme } from '@shared/domain';
+import type { Account, Episode, ShelfView, StreamItem, ContentType, EpgProgramme } from '@shared/domain';
 import { useAppStore } from '@/store/useAppStore';
+import { useLibrary } from '@/features/catalog/hooks/useLibrary';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useTranslation } from 'react-i18next';
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const {
     accounts,
     activeAccountId,
     activeTab,
     search,
-    loading,
-    error,
     setAccounts,
     setActiveAccountId,
     setActiveTab,
     setSearch,
-    setLoading,
     setError,
     enableSearchAll,
     hiddenCategories,
@@ -32,10 +34,6 @@ export function DashboardPage() {
     loadHiddenCategories
   } = useAppStore();
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [streams, setStreams] = useState<StreamItem[]>([]);
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeCategoryId, setActiveCategoryId] = useState('all');
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -44,105 +42,69 @@ export function DashboardPage() {
   const [shelfView, setShelfView] = useState<ShelfView>('catalog');
   const [lastPlayMessage, setLastPlayMessage] = useState<ReactNode>();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [nowPlaying, setNowPlaying] = useState<Record<number, string>>({});
   const [editingAccount, setEditingAccount] = useState<Account>();
   const [internalPlayerUrl, setInternalPlayerUrl] = useState<{ url: string; title: string; contentType: ContentType; streamId?: number; accountId?: string; startProgress?: number }>();
   const [multiViewStreams, setMultiViewStreams] = useState<Array<{ url: string; title: string; id: string }>>([]);
   const [multiViewMinimized, setMultiViewMinimized] = useState(false);
+  const [parentalPin, setParentalPin] = useState<string>();
+  const [viewMode, setViewMode] = useState<'cards' | 'epg'>('cards');
+
+  const {
+    categories,
+    favorites,
+    history,
+    streams,
+    nowPlaying,
+    categoryToLoad,
+    isLoading: loading,
+    error,
+    invalidateLibrary
+  } = useLibrary({
+    accountId: activeAccountId,
+    activeTab,
+    activeCategoryId,
+    enableSearchAll
+  });
+
+  useEffect(() => {
+    if (categoryToLoad !== activeCategoryId) {
+      setActiveCategoryId(categoryToLoad);
+    }
+  }, [categoryToLoad, activeCategoryId]);
 
   const loadAccounts = async () => {
     const result = await window.xtremeApi.accounts.list();
     setAccounts(result);
   };
 
-  const loadLibrary = async () => {
-    if (!activeAccountId) return;
-
-    setLoading(true);
-    setError(undefined);
-
-    try {
-      const [nextCategories, nextFavorites, nextHistory] = await Promise.all([
-        window.xtremeApi.xtream.categories(activeAccountId, activeTab),
-        window.xtremeApi.favorites.list(activeAccountId),
-        window.xtremeApi.history.list(activeAccountId)
-      ]);
-      setCategories(nextCategories);
-      setFavorites(nextFavorites);
-      setHistory(nextHistory);
-
-      let categoryToLoad = activeCategoryId;
-      if (categoryToLoad === 'all' && !enableSearchAll && nextCategories.length > 0) {
-        categoryToLoad = nextCategories[0].category_id;
-        setActiveCategoryId(categoryToLoad);
-      }
-
-      if (categoryToLoad !== 'all' || enableSearchAll) {
-        const nextStreams = await window.xtremeApi.xtream.streams(activeAccountId, activeTab, categoryToLoad === 'all' ? undefined : categoryToLoad);
-        setStreams(nextStreams);
-
-        // Fetch now playing info for live channels in the background
-        if (activeTab === 'live' && nextStreams.length > 0) {
-          const streamIds = nextStreams
-            .filter((s: StreamItem) => s.stream_id)
-            .slice(0, 50) // limit to first 50 to avoid overloading
-            .map((s: StreamItem) => s.stream_id as number);
-          if (streamIds.length > 0) {
-            window.xtremeApi.xtream.nowPlaying(activeAccountId, streamIds)
-              .then((data) => setNowPlaying(data))
-              .catch(() => { }); // silently ignore errors
-          }
-        } else {
-          setNowPlaying({});
-        }
-      } else {
-        setStreams([]);
-      }
-    } catch (err: any) {
-      setError(err.message || String(err));
-    } finally {
-      setLoading(false);
-    }
+  const loadSettings = async () => {
+    const data = await window.xtremeApi.settings.get();
+    setParentalPin(data?.parentalPin);
   };
 
   useEffect(() => {
     loadAccounts().catch((err) => setError(String(err)));
+    loadSettings().catch(() => {});
   }, []);
 
   useEffect(() => {
-    loadLibrary();
     if (activeAccountId) {
       loadHiddenCategories(activeAccountId, activeTab);
     }
-  }, [activeAccountId, activeTab, activeCategoryId, enableSearchAll]);
+  }, [activeAccountId, activeTab]);
 
-  // --- Keyboard shortcuts ---
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Ignore if typing in an input
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-
-      if (e.key === '/' || (e.metaKey && e.key === 'k') || (e.ctrlKey && e.key === 'k')) {
-        e.preventDefault();
-        document.querySelector<HTMLInputElement>('.search-input')?.focus();
-      }
-      if (e.key === '1') setActiveTab('live');
-      if (e.key === '2') setActiveTab('movie');
-      if (e.key === '3') setActiveTab('series');
-      if (e.key === 'f' && !e.metaKey && !e.ctrlKey) setShelfView(shelfView === 'favorites' ? 'catalog' : 'favorites');
-      if (e.key === 'h' && !e.metaKey && !e.ctrlKey) setShelfView(shelfView === 'history' ? 'catalog' : 'history');
-      if (e.key === 'Escape') {
-        setShowAccountModal(false);
-        setShowSettingsModal(false);
-        setShowInspectModal(false);
-        setEditingAccount(undefined);
-        setInternalPlayerUrl(undefined);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [shelfView]);
+  useKeyboardShortcuts({
+    shelfView,
+    setShelfView,
+    setActiveTab,
+    closeModals: () => {
+      setShowAccountModal(false);
+      setShowSettingsModal(false);
+      setShowInspectModal(false);
+      setEditingAccount(undefined);
+      setInternalPlayerUrl(undefined);
+    }
+  });
 
   const filteredStreams = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -158,7 +120,6 @@ export function DashboardPage() {
 
   const featuredStream = useMemo(() => {
     if (filteredStreams.length > 0 && shelfView === 'catalog' && (activeTab === 'movie' || activeTab === 'series') && !search) {
-      // Pega o primeiro item que tenha capa para destacar
       return filteredStreams.find(s => s.cover || s.stream_icon) || filteredStreams[0];
     }
     return null;
@@ -188,13 +149,12 @@ export function DashboardPage() {
         extension: forcedExtension
       });
 
-      // Check if we have history for this stream to resume
       const histories = await window.xtremeApi.history.list(activeAccountId);
       const historyItem = histories.find(h => h.streamId === streamId);
 
       let startProgress = 0;
       if (historyItem?.progress && historyItem.duration && historyItem.progress < historyItem.duration - 60) {
-        if (confirm(`Deseja retomar do minuto ${Math.floor(historyItem.progress / 60)}?`)) {
+        if (confirm(t('player.resumePrompt', { minute: Math.floor(historyItem.progress / 60) }))) {
           startProgress = historyItem.progress;
         }
       }
@@ -207,7 +167,7 @@ export function DashboardPage() {
         accountId: activeAccountId,
         startProgress
       });
-      setIsSidebarOpen(false); // Colapsa a sidebar para melhor experiência
+      setIsSidebarOpen(false);
       setLastPlayMessage(undefined);
       return;
     }
@@ -223,21 +183,20 @@ export function DashboardPage() {
     if (account.player === 'browser') {
       setLastPlayMessage(
         <span style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          O vídeo foi aberto no seu navegador.
+          {t('player.browserOpened')}
           <button
             onClick={() => window.xtremeApi.shell.openExternal(result.url)}
             style={{ background: 'none', border: 'none', color: '#4cc9f0', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
           >
-            Clique aqui se não abriu
+            {t('player.clickIfNotOpened')}
           </button>
         </span>
       );
     } else {
-      setLastPlayMessage(`Reproduzindo via ${result.method.toUpperCase()}`);
+      setLastPlayMessage(t('player.playingVia', { method: result.method.toUpperCase() }));
     }
 
-    const nextHistory = await window.xtremeApi.history.list(activeAccountId);
-    setHistory(nextHistory);
+    invalidateLibrary();
   };
 
   const playEpisode = async (episode: Episode) => {
@@ -255,11 +214,10 @@ export function DashboardPage() {
     const account = accounts.find(a => a.id === activeAccountId);
     if (!account) return;
 
-    // Calculate duration in minutes
     const startObj = new Date(epg.start_raw.replace(' ', 'T'));
     const endObj = new Date(epg.end_raw.replace(' ', 'T'));
     let durationMinutes = Math.floor((endObj.getTime() - startObj.getTime()) / 60000);
-    if (isNaN(durationMinutes) || durationMinutes <= 0) durationMinutes = 60; // fallback to 1h
+    if (isNaN(durationMinutes) || durationMinutes <= 0) durationMinutes = 60;
 
     const streamId = selectedStream.stream_id ?? selectedStream.series_id ?? 0;
     const name = `${selectedStream.name} (Gravação: ${epg.title})`;
@@ -290,17 +248,17 @@ export function DashboardPage() {
     if (account.player === 'browser') {
       setLastPlayMessage(
         <span style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          A gravação foi aberta no navegador.
+          {t('player.recordingBrowserOpened')}
           <button
             onClick={() => window.xtremeApi.shell.openExternal(result.url)}
             style={{ background: 'none', border: 'none', color: '#4cc9f0', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
           >
-            Clique aqui se não abriu
+            {t('player.clickIfNotOpened')}
           </button>
         </span>
       );
     } else {
-      setLastPlayMessage(`Reproduzindo gravação via ${result.method.toUpperCase()}`);
+      setLastPlayMessage(t('player.playingRecordingVia', { method: result.method.toUpperCase() }));
     }
     setShowInspectModal(false);
   };
@@ -308,7 +266,7 @@ export function DashboardPage() {
   const addMultiView = async (stream: StreamItem) => {
     if (!activeAccountId) return;
     if (multiViewStreams.length >= 4) {
-      alert('Limite de 4 canais simultâneos atingido.');
+      alert(t('player.limitReached'));
       return;
     }
     const streamId = stream.stream_id ?? 0;
@@ -362,9 +320,9 @@ export function DashboardPage() {
 
         {!activeAccountId ? (
           <section className="empty-state">
-            <h1>Cadastre sua primeira conta</h1>
-            <p>Adicione um servidor Xtream Codes para começar.</p>
-            <button className="primary-button" onClick={() => setShowAccountModal(true)}>Adicionar conta</button>
+            <h1>{t('emptyState.title')}</h1>
+            <p>{t('emptyState.subtitle')}</p>
+            <button className="primary-button" onClick={() => setShowAccountModal(true)}>{t('common.addAccount')}</button>
           </section>
         ) : (
           <AnimatePresence mode="wait">
@@ -392,7 +350,7 @@ export function DashboardPage() {
                   <div style={{ position: 'relative', zIndex: 2, maxWidth: '600px' }}>
                     <h1 style={{ fontSize: '42px', margin: '0 0 12px 0', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>{featuredStream.name}</h1>
                     <p style={{ margin: '0 0 20px 0', fontSize: '15px', color: '#cbd5e1', textShadow: '0 1px 4px rgba(0,0,0,0.8)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {featuredStream.plot || 'Sem descrição disponível.'}
+                      {featuredStream.plot || t('common.noDescription')}
                     </p>
                     <div style={{ display: 'flex', gap: '12px' }}>
                       <button className="primary-button" onClick={() => {
@@ -402,17 +360,72 @@ export function DashboardPage() {
                         } else {
                           playItem(featuredStream);
                         }
-                      }}>Assistir Agora</button>
+                      }}>{t('common.playNow')}</button>
                       <button className="ghost-button" onClick={() => {
                         setSelectedStream(featuredStream);
                         setShowInspectModal(true);
-                      }}>Mais Informações</button>
+                      }}>{t('common.moreInfo')}</button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {shelfView === 'catalog' ? <CategoryList categories={categories} activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} enableSearchAll={enableSearchAll} hiddenCategories={hiddenCategories} onToggleHidden={toggleHiddenCategory} /> : null}
+              {shelfView === 'catalog' ? (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+                  <CategoryList 
+                    categories={categories} 
+                    activeCategoryId={activeCategoryId} 
+                    onSelect={setActiveCategoryId} 
+                    enableSearchAll={enableSearchAll} 
+                    hiddenCategories={hiddenCategories} 
+                    onToggleHidden={toggleHiddenCategory} 
+                    parentalPin={parentalPin} 
+                  />
+                  {activeTab === 'live' && (
+                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', gap: '4px', marginLeft: 'auto' }}>
+                      <button 
+                        className="ghost-button"
+                        style={{ 
+                          background: viewMode === 'cards' ? 'rgba(255,255,255,0.15)' : 'transparent', 
+                          padding: '6px 12px', 
+                          fontSize: '0.85rem', 
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        onClick={() => setViewMode('cards')}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                          <rect x="3" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="14" width="7" height="7"></rect>
+                          <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        {t('epg.cardView')}
+                      </button>
+                      <button 
+                        className="ghost-button"
+                        style={{ 
+                          background: viewMode === 'epg' ? 'rgba(255,255,255,0.15)' : 'transparent', 
+                          padding: '6px 12px', 
+                          fontSize: '0.85rem', 
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        onClick={() => setViewMode('epg')}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                          <line x1="3" y1="12" x2="21" y2="12"></line>
+                          <line x1="3" y1="6" x2="21" y2="6"></line>
+                          <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                        {t('epg.gridView')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
               {error ? <div className="alert error">{error}</div> : null}
               {loading ? (
                 <div className="stream-grid" style={{ opacity: 0.5 }}>
@@ -422,7 +435,35 @@ export function DashboardPage() {
                 </div>
               ) : null}
 
-              {!loading && (
+              {!loading && viewMode === 'epg' && activeTab === 'live' && (
+                <EpgGrid 
+                  accountId={activeAccountId} 
+                  streams={filteredStreams} 
+                  onPlayLive={(streamId, title) => {
+                    const stream = filteredStreams.find(s => s.stream_id === streamId);
+                    if (stream) playItem(stream);
+                  }}
+                  onPlayArchive={async (streamId, title, startRaw, durationMinutes) => {
+                    try {
+                      await window.xtremeApi.player.openCatchup({
+                        accountId: activeAccountId,
+                        streamId,
+                        name: title,
+                        startRaw,
+                        durationMinutes,
+                        extension: 'm3u8'
+                      });
+                      setLastPlayMessage(t('player.playingRecordingVia', { method: t('common.settings') }));
+                      setTimeout(() => setLastPlayMessage(undefined), 5000);
+                    } catch (e: any) {
+                      setLastPlayMessage(<span style={{ color: '#ff8585' }}>Error: {e.message}</span>);
+                      setTimeout(() => setLastPlayMessage(undefined), 5000);
+                    }
+                  }}
+                />
+              )}
+
+              {!loading && (viewMode === 'cards' || activeTab !== 'live') && (
                 <StreamGrid
                   contentType={activeTab}
                   streams={featuredStream ? filteredStreams.filter(s => s !== featuredStream) : filteredStreams}
@@ -437,8 +478,7 @@ export function DashboardPage() {
                       name: stream.name,
                       icon: stream.stream_icon || stream.cover
                     });
-                    const nextFavorites = await window.xtremeApi.favorites.list(activeAccountId);
-                    setFavorites(nextFavorites);
+                    invalidateLibrary();
                   }}
                   onInspect={(stream) => {
                     setSelectedStream(stream);
@@ -476,7 +516,13 @@ export function DashboardPage() {
         }}
       />
 
-      <SettingsModal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      <SettingsModal 
+        open={showSettingsModal} 
+        onClose={() => {
+          setShowSettingsModal(false);
+          loadSettings().catch(() => {});
+        }} 
+      />
       <InspectModal
         open={showInspectModal}
         accountId={activeAccountId}

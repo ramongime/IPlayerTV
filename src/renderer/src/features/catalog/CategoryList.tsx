@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { Category } from '@shared/domain';
+import { useTranslation } from 'react-i18next';
+import { PinModal } from '../auth/PinModal';
 
 interface CategoryListProps {
   categories: Category[];
@@ -8,10 +10,13 @@ interface CategoryListProps {
   enableSearchAll?: boolean;
   hiddenCategories?: Set<string>;
   onToggleHidden?: (categoryId: string) => void;
+  parentalPin?: string;
 }
 
-export function CategoryList({ categories, activeCategoryId, onSelect, enableSearchAll, hiddenCategories, onToggleHidden }: CategoryListProps) {
+export function CategoryList({ categories, activeCategoryId, onSelect, enableSearchAll, hiddenCategories, onToggleHidden, parentalPin }: CategoryListProps) {
+  const { t } = useTranslation();
   const [showManager, setShowManager] = useState(false);
+  const [showPin, setShowPin] = useState(false);
 
   const visibleCategories = hiddenCategories
     ? categories.filter(c => !hiddenCategories.has(c.category_id))
@@ -25,7 +30,7 @@ export function CategoryList({ categories, activeCategoryId, onSelect, enableSea
         onChange={(e) => onSelect(e.target.value)}
         style={{ cursor: 'pointer', flex: 1 }}
       >
-        {enableSearchAll && <option value="all">TODOS</option>}
+        {enableSearchAll && <option value="all">{t('common.all').toUpperCase()}</option>}
         {visibleCategories.map((category) => (
           <option key={category.category_id} value={category.category_id}>
             {category.category_name}
@@ -37,8 +42,14 @@ export function CategoryList({ categories, activeCategoryId, onSelect, enableSea
         <div style={{ position: 'relative' }}>
           <button
             className="ghost-button"
-            title="Gerenciar categorias"
-            onClick={() => setShowManager(!showManager)}
+            title={t('categoryList.manage')}
+            onClick={() => {
+              if (!showManager && parentalPin) {
+                setShowPin(true);
+              } else {
+                setShowManager(!showManager);
+              }
+            }}
             style={{ fontSize: '1.1rem', padding: '6px 10px' }}
           >
             {showManager ? '✕' : '👁'}
@@ -59,7 +70,7 @@ export function CategoryList({ categories, activeCategoryId, onSelect, enableSea
               boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
             }}>
               <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 8px 0' }}>
-                Clique para ocultar/exibir categorias
+                {t('categoryList.clickToHide')}
               </p>
               {categories.map((cat) => {
                 const isHidden = hiddenCategories?.has(cat.category_id);
@@ -89,6 +100,13 @@ export function CategoryList({ categories, activeCategoryId, onSelect, enableSea
           )}
         </div>
       )}
+      
+      <PinModal 
+        open={showPin} 
+        correctPin={parentalPin || ''} 
+        onSuccess={() => { setShowPin(false); setShowManager(true); }}
+        onCancel={() => setShowPin(false)}
+      />
     </div>
   );
 }

@@ -77,8 +77,8 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
   const rating = tmdbInfo?.voteAverage || stream?.rating;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal large-modal" onClick={e => e.stopPropagation()}>
+    <div className="modal-backdrop" style={{ zIndex: 50 }} onClick={onClose}>
+      <div className="modal large-modal" onClick={e => e.stopPropagation()} style={{ zIndex: 51 }}>
         <div className="modal-header-row" style={tmdbInfo?.backdropPath ? { backgroundImage: `linear-gradient(to right, rgba(15, 23, 42, 0.9) 30%, transparent), url(${tmdbInfo.backdropPath})`, backgroundSize: 'cover', backgroundPosition: 'right', padding: '24px', borderRadius: '12px 12px 0 0', display: 'flex', gap: '20px' } : { display: 'flex', gap: '20px', paddingBottom: '16px', borderBottom: '1px solid #1e293b' }}>
           <div style={{ flexShrink: 0, width: '120px' }}>
             {coverImage ? <img src={coverImage} alt={stream.name} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }} /> : <div className="placeholder">Sem Capa</div>}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Account } from '@shared/domain';
+import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
   accounts: Account[];
@@ -18,6 +19,7 @@ interface AccountInfo {
 }
 
 export function Sidebar(props: SidebarProps) {
+  const { t } = useTranslation();
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(false);
   const [showInfoForId, setShowInfoForId] = useState<string>();
@@ -44,7 +46,7 @@ export function Sidebar(props: SidebarProps) {
     <aside className="sidebar">
       <div>
         <div className="brand">IPlayerTV</div>
-        <div className="panel-title">Contas</div>
+        <div className="panel-title">{t('common.accounts')}</div>
         <div className="account-list">
           {props.accounts.map((account) => (
             <div key={account.id}>
@@ -59,21 +61,21 @@ export function Sidebar(props: SidebarProps) {
                 <div className="account-card-actions">
                   <button
                     className="ghost-button"
-                    title="Info da conta"
+                    title={t('common.accountInfo')}
                     onClick={(e) => { e.stopPropagation(); toggleInfo(account.id); }}
                   >
                     ℹ
                   </button>
                   <button
                     className="ghost-button"
-                    title="Editar conta"
+                    title={t('common.editAccount')}
                     onClick={(e) => { e.stopPropagation(); props.onEditAccount(account); }}
                   >
                     ✏
                   </button>
                   <button
                     className="ghost-button danger"
-                    title="Remover conta"
+                    title={t('common.removeAccount')}
                     onClick={(e) => { e.stopPropagation(); props.onRemoveAccount(account.id); }}
                   >
                     ×
@@ -83,33 +85,33 @@ export function Sidebar(props: SidebarProps) {
               {showInfoForId === account.id && (
                 <div className="account-info-panel">
                   {loadingInfo ? (
-                    <small>Carregando informações...</small>
+                    <small>{t('common.loadingInfo')}</small>
                   ) : accountInfo ? (
                     <>
                       <div className="info-row">
-                        <span className="info-label">Status</span>
+                        <span className="info-label">{t('common.status')}</span>
                         <span className={`info-badge ${accountInfo.status === 'Active' ? 'badge-ok' : 'badge-warn'}`}>
                           {accountInfo.status}
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Expiração</span>
+                        <span className="info-label">{t('common.expiration')}</span>
                         <span>{accountInfo.expDate}</span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Conexões</span>
+                        <span className="info-label">{t('common.connections')}</span>
                         <span>{accountInfo.activeConnections} / {accountInfo.maxConnections}</span>
                       </div>
                     </>
                   ) : (
-                    <small style={{ color: '#ff8585' }}>Erro ao buscar informações</small>
+                    <small style={{ color: '#ff8585' }}>{t('common.errorInfo')}</small>
                   )}
                 </div>
               )}
             </div>
           ))}
         </div>
-        <button className="primary-button full" onClick={props.onCreateAccount}>Nova conta</button>
+        <button className="primary-button full" onClick={props.onCreateAccount}>{t('common.newAccount')}</button>
       </div>
 
     </aside>

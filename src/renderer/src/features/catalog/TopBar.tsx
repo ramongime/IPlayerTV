@@ -1,4 +1,5 @@
 import type { ContentType, ShelfView } from '@shared/domain';
+import { useTranslation } from 'react-i18next';
 
 interface TopBarProps {
   search: string;
@@ -11,13 +12,15 @@ interface TopBarProps {
   onToggleSidebar: () => void;
 }
 
-const tabs: { key: ContentType; label: string }[] = [
-  { key: 'live', label: 'Ao vivo' },
-  { key: 'movie', label: 'Filmes' },
-  { key: 'series', label: 'Séries' }
-];
-
 export function TopBar({ search, shelfView, activeTab, onSearchChange, onShelfChange, onTabChange, onOpenSettings, onToggleSidebar }: TopBarProps) {
+  const { t } = useTranslation();
+  
+  const tabs: { key: ContentType; label: string }[] = [
+    { key: 'live', label: t('tabs.live') },
+    { key: 'movie', label: t('tabs.movie') },
+    { key: 'series', label: t('tabs.series') }
+  ];
+
   return (
     <header className="topbar">
       <button className="ghost-button" onClick={onToggleSidebar} style={{ padding: '12px 16px', fontSize: '18px' }}>
@@ -37,7 +40,7 @@ export function TopBar({ search, shelfView, activeTab, onSearchChange, onShelfCh
 
       <input
         className="search-input"
-        placeholder="Buscar canal, filme, série ou episódio"
+        placeholder={t('common.search')}
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         style={{ flex: 1, minWidth: '200px' }}
@@ -47,7 +50,7 @@ export function TopBar({ search, shelfView, activeTab, onSearchChange, onShelfCh
         <button
           className={`ghost-button ${shelfView === 'history' ? 'segmented-active' : ''}`}
           onClick={() => onShelfChange('history')}
-          title="Histórico"
+          title={t('common.history')}
           style={{ padding: '8px', border: 'none', background: 'transparent', color: shelfView === 'history' ? '#4cc9f0' : '#9db2c7' }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
@@ -56,7 +59,7 @@ export function TopBar({ search, shelfView, activeTab, onSearchChange, onShelfCh
         <button
           className="ghost-button"
           onClick={onOpenSettings}
-          title="Configurações"
+          title={t('common.settings')}
           style={{ padding: '8px', border: 'none', background: 'transparent', color: '#9db2c7' }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
