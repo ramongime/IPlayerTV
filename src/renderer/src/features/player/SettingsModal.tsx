@@ -16,7 +16,8 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
     tmdbApiKey: '',
     parentalPin: ''
   });
-  const { enableSearchAll, setEnableSearchAll } = useAppStore();
+  const enableSearchAll = useAppStore(state => state.enableSearchAll);
+  const setEnableSearchAll = useAppStore(state => state.setEnableSearchAll);
 
   // PIN change state
   const [pinAction, setPinAction] = useState<'none' | 'set' | 'change' | 'remove'>('none');

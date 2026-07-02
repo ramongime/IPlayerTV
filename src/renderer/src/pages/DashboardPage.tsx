@@ -18,21 +18,19 @@ import { useTranslation } from 'react-i18next';
 
 export function DashboardPage() {
   const { t } = useTranslation();
-  const {
-    accounts,
-    activeAccountId,
-    activeTab,
-    search,
-    setAccounts,
-    setActiveAccountId,
-    setActiveTab,
-    setSearch,
-    setError,
-    enableSearchAll,
-    hiddenCategories,
-    toggleHiddenCategory,
-    loadHiddenCategories
-  } = useAppStore();
+  const accounts = useAppStore(state => state.accounts);
+  const activeAccountId = useAppStore(state => state.activeAccountId);
+  const activeTab = useAppStore(state => state.activeTab);
+  const search = useAppStore(state => state.search);
+  const setAccounts = useAppStore(state => state.setAccounts);
+  const setActiveAccountId = useAppStore(state => state.setActiveAccountId);
+  const setActiveTab = useAppStore(state => state.setActiveTab);
+  const setSearch = useAppStore(state => state.setSearch);
+  const setError = useAppStore(state => state.setError);
+  const enableSearchAll = useAppStore(state => state.enableSearchAll);
+  const hiddenCategories = useAppStore(state => state.hiddenCategories);
+  const toggleHiddenCategory = useAppStore(state => state.toggleHiddenCategory);
+  const loadHiddenCategories = useAppStore(state => state.loadHiddenCategories);
 
   const [activeCategoryId, setActiveCategoryId] = useState('all');
   const [showAccountModal, setShowAccountModal] = useState(false);
