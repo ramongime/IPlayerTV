@@ -22,7 +22,7 @@ export function useKeyboardShortcuts({ shelfView, setShelfView, setActiveTab, cl
       if (e.key === '2') setActiveTab('movie');
       if (e.key === '3') setActiveTab('series');
       if (e.key === 'f' && !e.metaKey && !e.ctrlKey) setShelfView(shelfView === 'favorites' ? 'catalog' : 'favorites');
-      if (e.key === 'h' && !e.metaKey && !e.ctrlKey) setShelfView(shelfView === 'history' ? 'catalog' : 'history');
+
       if (e.key === 'Escape') {
         closeModals();
       }

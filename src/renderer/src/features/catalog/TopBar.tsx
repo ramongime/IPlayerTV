@@ -47,15 +47,7 @@ export function TopBar({ search, shelfView, activeTab, onSearchChange, onShelfCh
       />
 
       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginLeft: '16px' }}>
-        <button
-          className={`ghost-button ${shelfView === 'history' ? 'segmented-active' : ''}`}
-          onClick={() => onShelfChange('history')}
-          title={t('common.history')}
-          style={{ padding: '8px', border: 'none', background: 'transparent', color: shelfView === 'history' ? '#4cc9f0' : '#9db2c7' }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-        </button>
-        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }}></div>
+
         <button
           className="ghost-button"
           onClick={onOpenSettings}

@@ -37,10 +37,8 @@ export class WatchedRepository implements IWatchedRepository {
     const db = getDatabase();
     if (accountId) {
       db.prepare('DELETE FROM watched WHERE accountId = ?').run(accountId);
-      db.prepare('DELETE FROM history WHERE accountId = ?').run(accountId);
     } else {
       db.prepare('DELETE FROM watched').run();
-      db.prepare('DELETE FROM history').run();
     }
   }
 }

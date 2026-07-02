@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Category, Favorite, HistoryItem, StreamItem, ContentType } from '@shared/domain';
+import type { Category, Favorite, StreamItem, ContentType } from '@shared/domain';
 
 interface UseLibraryParams {
   accountId?: string;
@@ -14,14 +14,13 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   const baseDataQuery = useQuery({
     queryKey: ['library-base', accountId, activeTab],
     queryFn: async () => {
-      if (!accountId) return { categories: [], favorites: [], history: [], watched: [] };
-      const [categories, favorites, history, watched] = await Promise.all([
+      if (!accountId) return { categories: [], favorites: [], watched: [] };
+      const [categories, favorites, watched] = await Promise.all([
         window.xtremeApi.xtream.categories(accountId, activeTab),
         window.xtremeApi.favorites.list(accountId),
-        window.xtremeApi.history.list(accountId),
         window.xtremeApi.watched.list(accountId)
       ]);
-      return { categories, favorites, history, watched };
+      return { categories, favorites, watched };
     },
     enabled: !!accountId,
     staleTime: 5 * 60 * 1000,
@@ -29,7 +28,7 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
 
   const categories = baseDataQuery.data?.categories ?? [];
   const favorites = baseDataQuery.data?.favorites ?? [];
-  const history = baseDataQuery.data?.history ?? [];
+
   const watched = baseDataQuery.data?.watched ?? [];
 
   let categoryToLoad = activeCategoryId;
@@ -85,7 +84,7 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   return {
     categories,
     favorites,
-    history,
+
     watched,
     streams,
     nowPlaying,

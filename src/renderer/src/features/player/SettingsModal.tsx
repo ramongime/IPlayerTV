@@ -99,96 +99,117 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '8px' }}>
-          {/* External Players Section */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>
-              {t('settingsModal.vlcPath')}
-            </label>
-            <input
-              placeholder="/Applications/VLC.app/Contents/MacOS/VLC"
-              value={settings.externalPlayers?.vlcPath || ''}
-              onChange={(e) => setSettings({ ...settings, externalPlayers: { ...settings.externalPlayers, vlcPath: e.target.value } })}
-            />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>
-              {t('settingsModal.mpvPath')}
-            </label>
-            <input
-              placeholder="/usr/local/bin/mpv"
-              value={settings.externalPlayers?.mpvPath || ''}
-              onChange={(e) => setSettings({ ...settings, externalPlayers: { ...settings.externalPlayers, mpvPath: e.target.value } })}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {/* Settings Fields Card */}
+          <div style={{
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '14px',
+            padding: '20px',
+            background: 'rgba(255,255,255,0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            {/* External Players Section */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>
-                {t('settingsModal.probeTime')}
+              <label className="settings-label">
+                {t('settingsModal.vlcPath')}
               </label>
               <input
-                type="number"
-                value={settings.stream?.probeTimeoutMs || 3500}
-                onChange={(e) => setSettings({ ...settings, stream: { probeTimeoutMs: Number(e.target.value || 3500) } })}
+                className="settings-input"
+                placeholder="/Applications/VLC.app/Contents/MacOS/VLC"
+                value={settings.externalPlayers?.vlcPath || ''}
+                onChange={(e) => setSettings({ ...settings, externalPlayers: { ...settings.externalPlayers, vlcPath: e.target.value } })}
               />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>
-                {t('settingsModal.tmdbKey')}
+              <label className="settings-label">
+                {t('settingsModal.mpvPath')}
               </label>
               <input
-                placeholder="xxxxxxxxxxxxxxx"
-                value={settings.tmdbApiKey || ''}
-                onChange={(e) => setSettings({ ...settings, tmdbApiKey: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>
-                {t('settingsModal.defaultAudio')}
-              </label>
-              <input
-                placeholder="pt"
-                value={settings.player?.defaultAudioLanguage || ''}
-                onChange={(e) => setSettings({ ...settings, player: { ...settings.player, defaultAudioLanguage: e.target.value } })}
+                className="settings-input"
+                placeholder="/usr/local/bin/mpv"
+                value={settings.externalPlayers?.mpvPath || ''}
+                onChange={(e) => setSettings({ ...settings, externalPlayers: { ...settings.externalPlayers, mpvPath: e.target.value } })}
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>
-                {t('settingsModal.defaultSubtitle')}
-              </label>
-              <input
-                placeholder="pt"
-                value={settings.player?.defaultSubtitleLanguage || ''}
-                onChange={(e) => setSettings({ ...settings, player: { ...settings.player, defaultSubtitleLanguage: e.target.value } })}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label className="settings-label">
+                  {t('settingsModal.probeTime')}
+                </label>
+                <input
+                  className="settings-input"
+                  type="number"
+                  value={settings.stream?.probeTimeoutMs || 3500}
+                  onChange={(e) => setSettings({ ...settings, stream: { probeTimeoutMs: Number(e.target.value || 3500) } })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label className="settings-label">
+                  {t('settingsModal.tmdbKey')}
+                </label>
+                <input
+                  className="settings-input"
+                  placeholder="xxxxxxxxxxxxxxx"
+                  value={settings.tmdbApiKey || ''}
+                  onChange={(e) => setSettings({ ...settings, tmdbApiKey: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label className="settings-label">
+                  {t('settingsModal.defaultAudio')}
+                </label>
+                <input
+                  className="settings-input"
+                  placeholder="pt"
+                  value={settings.player?.defaultAudioLanguage || ''}
+                  onChange={(e) => setSettings({ ...settings, player: { ...settings.player, defaultAudioLanguage: e.target.value } })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label className="settings-label">
+                  {t('settingsModal.defaultSubtitle')}
+                </label>
+                <input
+                  className="settings-input"
+                  placeholder="pt"
+                  value={settings.player?.defaultSubtitleLanguage || ''}
+                  onChange={(e) => setSettings({ ...settings, player: { ...settings.player, defaultSubtitleLanguage: e.target.value } })}
+                />
+              </div>
             </div>
           </div>
 
           {/* Toggles */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '4px 0' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={enableSearchAll}
-                onChange={(e) => setEnableSearchAll(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#4cc9f0' }}
-              />
-              <span style={{ fontSize: '14px' }}>{t('settingsModal.enableAllCategory')}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+              <div className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={enableSearchAll}
+                  onChange={(e) => setEnableSearchAll(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: '#f8fafc' }}>{t('settingsModal.enableAllCategory')}</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={settings.player?.splitAudio || false}
-                onChange={(e) => setSettings({ ...settings, player: { ...settings.player, splitAudio: e.target.checked } })}
-                style={{ width: '18px', height: '18px', accentColor: '#4cc9f0' }}
-              />
-              <span style={{ fontSize: '14px' }}>{t('settingsModal.splitAudio')}</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+              <div className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={settings.player?.splitAudio || false}
+                  onChange={(e) => setSettings({ ...settings, player: { ...settings.player, splitAudio: e.target.checked } })}
+                />
+                <span className="toggle-slider"></span>
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: '#f8fafc' }}>{t('settingsModal.splitAudio')}</span>
             </label>
           </div>
 
@@ -220,7 +241,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                     window.location.reload();
                   }
                 }}
-                style={{ padding: '6px 12px', fontSize: '13px', border: '1px solid rgba(255, 95, 95, 0.4)' }}
+                style={{ padding: '8px 16px', fontSize: '13px', border: '1px solid rgba(255, 95, 95, 0.4)', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', whiteSpace: 'nowrap' }}
               >
                 {t('settingsModal.clearButton', 'Apagar Dados')}
               </button>

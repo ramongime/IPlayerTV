@@ -20,10 +20,7 @@ contextBridge.exposeInMainWorld('xtremeApi', {
     list: (accountId: string) => ipcRenderer.invoke('favorites:list', accountId),
     toggle: (payload: unknown) => ipcRenderer.invoke('favorites:toggle', payload)
   },
-  history: {
-    list: (accountId: string) => ipcRenderer.invoke('history:list', accountId),
-    upsertProgress: (accountId: string, streamId: number, progress: number, duration: number) => ipcRenderer.invoke('history:upsertProgress', accountId, streamId, progress, duration)
-  },
+
   watched: {
     list: (accountId: string) => ipcRenderer.invoke('watched:list', accountId),
     toggle: (accountId: string, contentType: string, streamId: number) => ipcRenderer.invoke('watched:toggle', accountId, contentType, streamId),

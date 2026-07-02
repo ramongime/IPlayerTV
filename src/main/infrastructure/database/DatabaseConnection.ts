@@ -39,19 +39,6 @@ function migrate(database: Database.Database) {
       PRIMARY KEY (accountId, contentType, streamId)
     );
 
-    CREATE TABLE IF NOT EXISTS history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      accountId TEXT NOT NULL,
-      contentType TEXT NOT NULL,
-      streamId INTEGER NOT NULL,
-      name TEXT NOT NULL,
-      streamUrl TEXT NOT NULL,
-      playedAt TEXT NOT NULL,
-      progress INTEGER,
-      duration INTEGER
-    );
-
-    CREATE INDEX IF NOT EXISTS history_account_playedAt_ix ON history(accountId, playedAt DESC);
 
     CREATE TABLE IF NOT EXISTS watched (
       accountId TEXT NOT NULL,

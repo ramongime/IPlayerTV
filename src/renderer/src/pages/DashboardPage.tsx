@@ -43,7 +43,7 @@ export function DashboardPage() {
   const [lastPlayMessage, setLastPlayMessage] = useState<ReactNode>();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [editingAccount, setEditingAccount] = useState<Account>();
-  const [internalPlayerUrl, setInternalPlayerUrl] = useState<{ url: string; title: string; contentType: ContentType; streamId?: number; accountId?: string; startProgress?: number }>();
+  const [internalPlayerUrl, setInternalPlayerUrl] = useState<{ url: string; title: string; contentType: ContentType; streamId?: number; accountId?: string }>();
   const [multiViewStreams, setMultiViewStreams] = useState<Array<{ url: string; title: string; id: string }>>([]);
   const [multiViewMinimized, setMultiViewMinimized] = useState(false);
   const [parentalPin, setParentalPin] = useState<string>();
@@ -52,7 +52,6 @@ export function DashboardPage() {
   const {
     categories,
     favorites,
-    history,
     watched,
     streams,
     nowPlaying,
@@ -115,13 +114,11 @@ export function DashboardPage() {
     const normalized = search.trim().toLowerCase();
     const base = shelfView === 'catalog'
       ? streams
-      : shelfView === 'favorites'
-        ? streams.filter((stream) => favorites.some((fav) => fav.contentType === activeTab && fav.streamId === (stream.stream_id ?? stream.series_id ?? 0)))
-        : streams.filter((stream) => history.some((item) => item.contentType === activeTab && item.streamId === (stream.stream_id ?? stream.series_id ?? 0)));
+      : streams.filter((stream) => favorites.some((fav) => fav.contentType === activeTab && fav.streamId === (stream.stream_id ?? stream.series_id ?? 0)));
 
     if (!normalized) return base;
     return base.filter((item) => item.name.toLowerCase().includes(normalized));
-  }, [streams, search, favorites, history, shelfView, activeTab]);
+  }, [streams, search, favorites, shelfView, activeTab]);
 
   const featuredStream = useMemo(() => {
     if (filteredStreams.length > 0 && shelfView === 'catalog' && (activeTab === 'movie' || activeTab === 'series') && !search) {
@@ -154,23 +151,12 @@ export function DashboardPage() {
         extension: forcedExtension
       });
 
-      const histories = await window.xtremeApi.history.list(activeAccountId);
-      const historyItem = histories.find(h => h.streamId === streamId);
-
-      let startProgress = 0;
-      if (historyItem?.progress && historyItem.duration && historyItem.progress < historyItem.duration - 60) {
-        if (confirm(t('player.resumePrompt', { minute: Math.floor(historyItem.progress / 60) }))) {
-          startProgress = historyItem.progress;
-        }
-      }
-
       setInternalPlayerUrl({
         url: result.url,
         title: options?.name || stream.name,
         contentType: options?.contentType || activeTab,
         streamId,
-        accountId: activeAccountId,
-        startProgress
+        accountId: activeAccountId
       });
       setIsSidebarOpen(false);
       setLastPlayMessage(undefined);
@@ -550,7 +536,7 @@ export function DashboardPage() {
           contentType={internalPlayerUrl.contentType}
           streamId={internalPlayerUrl.streamId}
           accountId={internalPlayerUrl.accountId}
-          startProgress={internalPlayerUrl.startProgress}
+
           onClose={() => setInternalPlayerUrl(undefined)}
         />
       )}

@@ -50,6 +50,6 @@ export class AccountRepository implements IAccountRepository {
     const db = getDatabase();
     db.prepare('DELETE FROM accounts WHERE id = ?').run(id);
     db.prepare('DELETE FROM favorites WHERE accountId = ?').run(id);
-    db.prepare('DELETE FROM history WHERE accountId = ?').run(id);
+
   }
 }

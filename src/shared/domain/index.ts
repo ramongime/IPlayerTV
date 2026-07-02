@@ -1,5 +1,5 @@
 export type ContentType = 'live' | 'movie' | 'series';
-export type ShelfView = 'catalog' | 'favorites' | 'history';
+export type ShelfView = 'catalog' | 'favorites';
 
 export interface AppConfig {
   stream: {
@@ -108,16 +108,6 @@ export interface Favorite {
   createdAt: string;
 }
 
-export interface HistoryItem {
-  accountId: string;
-  contentType: ContentType;
-  streamId: number;
-  name: string;
-  streamUrl: string;
-  playedAt: string;
-  progress?: number;
-  duration?: number;
-}
 
 export interface XtreamAuthResponse {
   user_info?: {

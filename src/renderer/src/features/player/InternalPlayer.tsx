@@ -15,11 +15,11 @@ interface InternalPlayerProps {
   contentType: ContentType;
   streamId?: number;
   accountId?: string;
-  startProgress?: number;
+
   onClose: () => void;
 }
 
-export function InternalPlayer({ streamUrl, title, contentType, streamId, accountId, startProgress, onClose }: InternalPlayerProps) {
+export function InternalPlayer({ streamUrl, title, contentType, streamId, accountId, onClose }: InternalPlayerProps) {
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -139,7 +139,6 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (startProgress && startProgress > 0) video.currentTime = startProgress;
         if (playerSettings.defaultAudioLanguage) {
           const idx = hls?.audioTracks.findIndex(tr =>
             tr.name.toLowerCase().includes(playerSettings.defaultAudioLanguage!.toLowerCase()) ||
@@ -174,7 +173,6 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
       hlsRef.current = null;
       video.src = streamUrl;
       video.addEventListener('loadedmetadata', () => {
-        if (startProgress && startProgress > 0) video.currentTime = startProgress;
         setTimeout(refreshTracks, 500);
       });
       video.play().catch((err) => { if (err.name !== 'AbortError') setError('Falha ao reproduzir: ' + err.message); });
@@ -195,19 +193,9 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
       hlsRef.current = null;
       window.removeEventListener('keydown', handleKeydown);
     };
-  }, [streamUrl, startProgress, playerSettings]);
+  }, [streamUrl, playerSettings]);
 
-  // Progress Tracking
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !accountId || !streamId || contentType === 'live') return;
-    const interval = setInterval(() => {
-      const p = Math.floor(video.currentTime);
-      const d = Math.floor(video.duration);
-      if (!isNaN(p) && !isNaN(d) && d > 0) window.xtremeApi.history.upsertProgress(accountId, streamId, p, d).catch(console.error);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [accountId, streamId, contentType]);
+
 
   const hasAudioOptions = audioTracks.length > 1;
   const hasSubOptions = subtitleTracks.length > 0;
