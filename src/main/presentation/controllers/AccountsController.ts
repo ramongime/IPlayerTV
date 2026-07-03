@@ -1,6 +1,12 @@
 import { ipcMain } from 'electron';
+import { ZodError } from 'zod';
+import { accountInputSchema, accountUpdateSchema } from '@shared/domain/schemas';
 import { AccountRepository } from '../../infrastructure/database/AccountRepository';
 import { XtreamProvider } from '../../infrastructure/providers/XtreamProvider';
+
+function formatZodError(error: ZodError) {
+  return error.issues.map((issue) => issue.message).join(', ');
+}
 
 export function registerAccountsIPC(
   accountsRepo: AccountRepository,
@@ -12,9 +18,43 @@ export function registerAccountsIPC(
     return account;
   };
 
+  const assertValidCredentials = async (credentials: { server: string; username: string; password: string; userAgent?: string }) => {
+    const result = await xtreamProvider.authenticate(credentials);
+    if (!result.ok) {
+      throw new Error('Não foi possível validar a conta: credenciais inválidas ou servidor Xtream inacessível.');
+    }
+  };
+
   ipcMain.handle('accounts:list', () => accountsRepo.list());
-  ipcMain.handle('accounts:create', (_, payload) => accountsRepo.create(payload));
-  ipcMain.handle('accounts:update', (_, id: string, payload: any) => accountsRepo.update(id, payload));
+
+  ipcMain.handle('accounts:create', async (_, payload) => {
+    let input;
+    try {
+      input = accountInputSchema.parse(payload);
+    } catch (error) {
+      throw new Error(error instanceof ZodError ? formatZodError(error) : String(error));
+    }
+
+    await assertValidCredentials(input);
+    return accountsRepo.create(input);
+  });
+
+  ipcMain.handle('accounts:update', async (_, id: string, payload: any) => {
+    let input;
+    try {
+      input = accountUpdateSchema.parse(payload);
+    } catch (error) {
+      throw new Error(error instanceof ZodError ? formatZodError(error) : String(error));
+    }
+
+    if (input.server || input.username || input.password) {
+      const existing = resolveAccount(id);
+      await assertValidCredentials({ ...existing, ...input });
+    }
+
+    return accountsRepo.update(id, input);
+  });
+
   ipcMain.handle('accounts:remove', (_, id) => accountsRepo.remove(id));
   ipcMain.handle('accounts:info', async (_, accountId: string) => {
     const account = resolveAccount(accountId);

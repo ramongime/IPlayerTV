@@ -4,13 +4,15 @@ Starter desktop para IPTV/Xtream em **Electron + React + TypeScript + SQLite**.
 
 ## O que já vem nessa versão
 
-- Cadastro e validação de contas Xtream
+- Cadastro e validação de contas Xtream (credenciais testadas no servidor antes de salvar)
+- **Login via URL M3U**, além do cadastro Xtream tradicional
 - Biblioteca de **Live / Movies / Series**
 - **Favoritos** e **Histórico**
 - **EPG curto** para canais ao vivo
 - **Carregamento de episódios** para séries
 - **Fallback de URL** para stream antes de abrir no player
 - Integração com **VLC**, **mpv** ou browser
+- **Controle parental** por PIN para categorias
 - Persistência local com SQLite
 - Script base de empacotamento com **electron-builder**
 
@@ -45,8 +47,5 @@ Exemplos comuns:
 ## Próximos upgrades recomendados
 
 - Criptografia da senha salva
-- Pôsteres/metadata externos (TMDB)
-- Player embutido em vez de externo
 - Download / gravação / catch-up
 - EPG XMLTV mais completo
-- Login M3U além de Xtream

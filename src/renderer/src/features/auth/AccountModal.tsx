@@ -54,6 +54,7 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
   const [inputMode, setInputMode] = useState<'xtream' | 'm3u'>('xtream');
   const [m3uUrl, setM3uUrl] = useState('');
   const [m3uError, setM3uError] = useState<string>();
+  const [submitError, setSubmitError] = useState<string>();
 
   const isEdit = !!editAccount;
 
@@ -76,6 +77,7 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
       setM3uUrl('');
       setM3uError(undefined);
     }
+    setSubmitError(undefined);
   }, [open, editAccount]);
 
   if (!open) return null;
@@ -101,6 +103,7 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
 
   const handleSubmit = async () => {
     setSaving(true);
+    setSubmitError(undefined);
     try {
       if (isEdit && editAccount && onUpdate) {
         await onUpdate(editAccount.id, form);
@@ -110,6 +113,8 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
       onClose();
       setForm(emptyForm);
       setM3uUrl('');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : String(error));
     } finally {
       setSaving(false);
     }
@@ -179,6 +184,8 @@ export function AccountModal({ open, editAccount, onClose, onSave, onUpdate }: A
             <input placeholder="User-Agent optional" value={form.userAgent} onChange={(e) => setForm({ ...form, userAgent: e.target.value })} />
           </div>
         )}
+
+        {submitError && <p style={{ color: '#ff8585', fontSize: '0.85rem', margin: '0 0 12px 0' }}>{submitError}</p>}
 
         <div className="modal-actions">
           <button className="ghost-button" onClick={onClose}>{t('common.cancel')}</button>
