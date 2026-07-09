@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Account, ContentType } from '@shared/domain';
+import type { Account, ContentType } from '@iplayertv/core';
 
 interface AppState {
   accounts: Account[];

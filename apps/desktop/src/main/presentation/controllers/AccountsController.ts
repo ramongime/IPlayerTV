@@ -1,8 +1,8 @@
 import { ipcMain } from 'electron';
 import { ZodError } from 'zod';
-import { accountInputSchema, accountUpdateSchema } from '@shared/domain/schemas';
+import { accountInputSchema, accountUpdateSchema } from '@iplayertv/core';
 import { AccountRepository } from '../../infrastructure/database/AccountRepository';
-import { XtreamProvider } from '../../infrastructure/providers/XtreamProvider';
+import { XtreamProvider } from '@iplayertv/core';
 
 function formatZodError(error: ZodError) {
   return error.issues.map((issue) => issue.message).join(', ');
@@ -12,8 +12,9 @@ export function registerAccountsIPC(
   accountsRepo: AccountRepository,
   xtreamProvider: XtreamProvider
 ) {
-  const resolveAccount = (accountId: string) => {
-    const account = accountsRepo.list().find(a => a.id === accountId);
+  const resolveAccount = async (accountId: string) => {
+    const accounts = await accountsRepo.list();
+    const account = accounts.find(a => a.id === accountId);
     if (!account) throw new Error(`Account not found: ${accountId}`);
     return account;
   };
@@ -48,7 +49,7 @@ export function registerAccountsIPC(
     }
 
     if (input.server || input.username || input.password) {
-      const existing = resolveAccount(id);
+      const existing = await resolveAccount(id);
       await assertValidCredentials({ ...existing, ...input });
     }
 
@@ -57,7 +58,7 @@ export function registerAccountsIPC(
 
   ipcMain.handle('accounts:remove', (_, id) => accountsRepo.remove(id));
   ipcMain.handle('accounts:info', async (_, accountId: string) => {
-    const account = resolveAccount(accountId);
+    const account = await resolveAccount(accountId);
     const result = await xtreamProvider.authenticate(account);
     const info = result.data.user_info;
     const server = result.data.server_info;

@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { XtremeApi } from '@iplayertv/core';
 
-contextBridge.exposeInMainWorld('xtremeApi', {
+const xtremeApi = {
   accounts: {
     list: () => ipcRenderer.invoke('accounts:list'),
     create: (payload: unknown) => ipcRenderer.invoke('accounts:create', payload),
@@ -47,4 +48,6 @@ contextBridge.exposeInMainWorld('xtremeApi', {
     togglePip: (enable: boolean) => ipcRenderer.invoke('window:togglePip', enable),
     download: (url: string) => ipcRenderer.invoke('window:download', url)
   }
-});
+} satisfies XtremeApi;
+
+contextBridge.exposeInMainWorld('xtremeApi', xtremeApi);

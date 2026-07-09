@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Category } from '@shared/domain';
+import type { Category } from '@iplayertv/core';
 import { useTranslation } from 'react-i18next';
 import { PinModal } from '../auth/PinModal';
 

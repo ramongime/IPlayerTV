@@ -9,8 +9,9 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w apps/desktop",
-    "build": "npm run build -w apps/desktop",
-    "dist": "npm run dist -w apps/desktop"
+    "dev": "npm run build -w packages/core && npm run dev -w apps/desktop",
+    "dev:core": "npm run dev -w packages/core",
+    "build": "npm run build -w packages/core && npm run build -w apps/desktop",
+    "dist": "npm run build -w packages/core && npm run dist -w apps/desktop"
   }
 }

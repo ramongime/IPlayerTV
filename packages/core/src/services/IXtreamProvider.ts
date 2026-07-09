@@ -1,4 +1,4 @@
-import type { Account, Category, ContentType, EpgProgramme, Episode, NowPlayingMap, StreamItem, XtreamAuthResponse } from '@shared/domain';
+import type { Account, Category, ContentType, EpgProgramme, Episode, NowPlayingMap, StreamItem, XtreamAuthResponse } from '../domain';
 
 export interface IXtreamProvider {
   authenticate(account: Pick<Account, 'server' | 'username' | 'password' | 'userAgent'>): Promise<{ ok: boolean; data: XtreamAuthResponse }>;
@@ -8,6 +8,6 @@ export interface IXtreamProvider {
   shortEpg(account: Account, streamId: number, limit?: number): Promise<EpgProgramme[]>;
   getEpgTable(account: Account, streamIds: string): Promise<Record<string, EpgProgramme[]>>;
   nowPlaying(account: Account, streamIds: number[]): Promise<NowPlayingMap>;
-  resolveBestStreamUrl(account: Account, contentType: ContentType, streamId: number, extension?: string): Promise<string>;
+  resolveBestStreamUrl(account: Account, contentType: ContentType, streamId: number, extension?: string, forceExtension?: boolean): Promise<string>;
   resolveCatchupUrl(account: Account, streamId: number, startRaw: string, durationMinutes: number, extension?: string): string;
 }

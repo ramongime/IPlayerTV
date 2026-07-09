@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { AccountRepository } from '../../infrastructure/database/AccountRepository';
-import { XtreamProvider } from '../../infrastructure/providers/XtreamProvider';
+import { XtreamProvider } from '@iplayertv/core';
 import { DesktopPlayerProvider } from '../../infrastructure/providers/DesktopPlayerProvider';
 
 export function registerPlayerIPC(
@@ -9,7 +9,7 @@ export function registerPlayerIPC(
   playerProvider: DesktopPlayerProvider
 ) {
   ipcMain.handle('player:open', async (_, payload) => {
-    const account = accountsRepo.list().find(a => a.id === payload.accountId);
+    const account = (await accountsRepo.list()).find(a => a.id === payload.accountId);
     if (!account) throw new Error('Account not found');
 
     let preferredExtension = payload.extension;
@@ -31,7 +31,7 @@ export function registerPlayerIPC(
   });
 
   ipcMain.handle('player:resolveUrl', async (_, payload) => {
-    const account = accountsRepo.list().find(a => a.id === payload.accountId);
+    const account = (await accountsRepo.list()).find(a => a.id === payload.accountId);
     if (!account) throw new Error('Account not found');
 
     let preferredExtension = payload.extension;
@@ -52,7 +52,7 @@ export function registerPlayerIPC(
   });
 
   ipcMain.handle('player:resolveCatchupUrl', async (_, payload: { accountId: string; streamId: number; startRaw: string; durationMinutes: number; extension?: string }) => {
-    const account = accountsRepo.list().find(a => a.id === payload.accountId);
+    const account = (await accountsRepo.list()).find(a => a.id === payload.accountId);
     if (!account) throw new Error('Account not found');
 
     const streamUrl = xtreamProvider.resolveCatchupUrl(
@@ -66,7 +66,7 @@ export function registerPlayerIPC(
   });
 
   ipcMain.handle('player:openCatchup', async (_, payload: { accountId: string; streamId: number; name: string; startRaw: string; durationMinutes: number; extension?: string }) => {
-    const account = accountsRepo.list().find(a => a.id === payload.accountId);
+    const account = (await accountsRepo.list()).find(a => a.id === payload.accountId);
     if (!account) throw new Error('Account not found');
 
     const streamUrl = xtreamProvider.resolveCatchupUrl(

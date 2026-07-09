@@ -10,7 +10,7 @@ import { SettingsModal } from '@/features/player/SettingsModal';
 import { Sidebar } from '@/features/auth/Sidebar';
 import { StreamGrid } from '@/features/catalog/StreamGrid';
 import { TopBar } from '@/features/catalog/TopBar';
-import type { Account, Episode, ShelfView, StreamItem, ContentType, EpgProgramme } from '@shared/domain';
+import type { Account, Episode, ShelfView, StreamItem, ContentType, EpgProgramme } from '@iplayertv/core';
 import { useAppStore } from '@/store/useAppStore';
 import { useLibrary } from '@/features/catalog/hooks/useLibrary';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';

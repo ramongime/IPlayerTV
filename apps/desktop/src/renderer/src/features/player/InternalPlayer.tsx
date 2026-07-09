@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
-import type { ContentType } from '@shared/domain';
+import type { ContentType } from '@iplayertv/core';
 import { useTranslation } from 'react-i18next';
 
 interface TrackInfo {

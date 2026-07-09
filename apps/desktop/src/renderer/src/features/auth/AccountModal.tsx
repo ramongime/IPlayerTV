@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { Account } from '@shared/domain';
-import { parseM3uUrl } from '@shared/utils/parseM3uUrl';
+import type { Account } from '@iplayertv/core';
+import { parseM3uUrl } from '@iplayertv/core';
 import { useTranslation } from 'react-i18next';
 
 interface AccountModalProps {

@@ -1,7 +1,7 @@
 import { AccountRepository } from '../../infrastructure/database/AccountRepository';
 import { FavoriteRepository } from '../../infrastructure/database/FavoriteRepository';
 import { WatchedRepository } from '../../infrastructure/database/WatchedRepository';
-import { XtreamProvider } from '../../infrastructure/providers/XtreamProvider';
+import { XtreamProvider } from '@iplayertv/core';
 import { DesktopPlayerProvider } from '../../infrastructure/providers/DesktopPlayerProvider';
 import { SettingsProvider } from '../../infrastructure/settings/SettingsProvider';
 

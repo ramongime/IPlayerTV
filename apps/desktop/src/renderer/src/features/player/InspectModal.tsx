@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import type { ContentType, EpgProgramme, Episode, StreamItem } from '@shared/domain';
+import type { ContentType, EpgProgramme, Episode, StreamItem } from '@iplayertv/core';
 
 interface InspectModalProps {
   open: boolean;
@@ -17,7 +17,7 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [expandedSeason, setExpandedSeason] = useState<number | null>(null);
-  const [tmdbInfo, setTmdbInfo] = useState<import('@shared/domain').TmdbInfo>();
+  const [tmdbInfo, setTmdbInfo] = useState<import('@iplayertv/core').TmdbInfo>();
 
   const groupedEpisodes = useMemo(() => {
     return episodes.reduce((acc, ep) => {

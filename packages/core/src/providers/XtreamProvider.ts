@@ -1,5 +1,6 @@
-import type { Account, Category, ContentType, EpgProgramme, Episode, NowPlayingMap, SeriesInfoResponse, StreamItem, XtreamAuthResponse } from '@shared/domain';
-import type { IXtreamProvider } from '../../core/services/IXtreamProvider';
+import type { Account, Category, ContentType, EpgProgramme, Episode, NowPlayingMap, SeriesInfoResponse, StreamItem, XtreamAuthResponse } from '../domain';
+import type { IXtreamProvider } from '../services/IXtreamProvider';
+import { decodeBase64 } from '../utils/base64';
 
 export class XtreamProvider implements IXtreamProvider {
   constructor(private getTimeoutMs: () => number) {}
@@ -131,15 +132,6 @@ export class XtreamProvider implements IXtreamProvider {
     return result;
   }
 
-  private decodeBase64(value: unknown): string {
-    if (typeof value !== 'string' || value.length === 0) return '';
-    try {
-      return Buffer.from(value, 'base64').toString('utf-8');
-    } catch {
-      return String(value);
-    }
-  }
-
   private formatEpgTime(value: unknown): string {
     if (!value) return '';
     // The API may return a date string like "2026-05-04 21:00:00" or an epoch timestamp
@@ -178,8 +170,8 @@ export class XtreamProvider implements IXtreamProvider {
     }
 
     return {
-      title: this.decodeBase64(raw.title) || undefined,
-      description: this.decodeBase64(raw.description) || undefined,
+      title: decodeBase64(raw.title) || undefined,
+      description: decodeBase64(raw.description) || undefined,
       start: startTs ? this.formatEpgTime(startTs) : this.formatEpgTime(raw.start),
       start_raw: typeof raw.start === 'string' ? raw.start : undefined,
       end: stopTs ? this.formatEpgTime(stopTs) : this.formatEpgTime(raw.end),

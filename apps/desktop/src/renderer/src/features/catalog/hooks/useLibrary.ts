@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Category, Favorite, StreamItem, ContentType } from '@shared/domain';
+import type { Category, Favorite, StreamItem, ContentType } from '@iplayertv/core';
 
 interface UseLibraryParams {
   accountId?: string;

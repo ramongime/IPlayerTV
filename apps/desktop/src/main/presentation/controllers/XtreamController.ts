@@ -1,23 +1,24 @@
 import { ipcMain } from 'electron';
 import { AccountRepository } from '../../infrastructure/database/AccountRepository';
-import { XtreamProvider } from '../../infrastructure/providers/XtreamProvider';
-import type { ContentType } from '@shared/domain';
+import { XtreamProvider } from '@iplayertv/core';
+import type { ContentType } from '@iplayertv/core';
 
 export function registerXtreamIPC(
   accountsRepo: AccountRepository,
   xtreamProvider: XtreamProvider
 ) {
-  const resolveAccount = (accountId: string) => {
-    const account = accountsRepo.list().find(a => a.id === accountId);
+  const resolveAccount = async (accountId: string) => {
+    const accounts = await accountsRepo.list();
+    const account = accounts.find(a => a.id === accountId);
     if (!account) throw new Error(`Account not found: ${accountId}`);
     return account;
   };
 
   ipcMain.handle('xtream:authenticate', (_, account) => xtreamProvider.authenticate(account));
-  ipcMain.handle('xtream:categories', (_, accountId: string, contentType: ContentType) => xtreamProvider.categories(resolveAccount(accountId), contentType));
-  ipcMain.handle('xtream:streams', (_, accountId: string, contentType: ContentType, categoryId?: string) => xtreamProvider.streams(resolveAccount(accountId), contentType, categoryId));
-  ipcMain.handle('xtream:series-episodes', (_, accountId: string, seriesId: number) => xtreamProvider.seriesEpisodes(resolveAccount(accountId), seriesId));
-  ipcMain.handle('xtream:epg', (_, accountId: string, streamId: number, limit?: number) => xtreamProvider.shortEpg(resolveAccount(accountId), streamId, limit));
-  ipcMain.handle('xtream:epg-table', (_, accountId: string, streamIds: string) => xtreamProvider.getEpgTable(resolveAccount(accountId), streamIds));
-  ipcMain.handle('xtream:now-playing', (_, accountId: string, streamIds: number[]) => xtreamProvider.nowPlaying(resolveAccount(accountId), streamIds));
+  ipcMain.handle('xtream:categories', async (_, accountId: string, contentType: ContentType) => xtreamProvider.categories(await resolveAccount(accountId), contentType));
+  ipcMain.handle('xtream:streams', async (_, accountId: string, contentType: ContentType, categoryId?: string) => xtreamProvider.streams(await resolveAccount(accountId), contentType, categoryId));
+  ipcMain.handle('xtream:series-episodes', async (_, accountId: string, seriesId: number) => xtreamProvider.seriesEpisodes(await resolveAccount(accountId), seriesId));
+  ipcMain.handle('xtream:epg', async (_, accountId: string, streamId: number, limit?: number) => xtreamProvider.shortEpg(await resolveAccount(accountId), streamId, limit));
+  ipcMain.handle('xtream:epg-table', async (_, accountId: string, streamIds: string) => xtreamProvider.getEpgTable(await resolveAccount(accountId), streamIds));
+  ipcMain.handle('xtream:now-playing', async (_, accountId: string, streamIds: number[]) => xtreamProvider.nowPlaying(await resolveAccount(accountId), streamIds));
 }

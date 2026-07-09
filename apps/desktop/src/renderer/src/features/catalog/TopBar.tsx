@@ -1,4 +1,4 @@
-import type { ContentType, ShelfView } from '@shared/domain';
+import type { ContentType, ShelfView } from '@iplayertv/core';
 import { useTranslation } from 'react-i18next';
 
 interface TopBarProps {

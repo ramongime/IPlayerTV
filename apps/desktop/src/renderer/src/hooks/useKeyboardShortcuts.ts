@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { ShelfView, ContentType } from '@shared/domain';
+import type { ShelfView, ContentType } from '@iplayertv/core';
 
 interface UseKeyboardShortcutsParams {
   shelfView: ShelfView;

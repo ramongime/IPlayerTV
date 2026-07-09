@@ -3,7 +3,7 @@ import { shell } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync } from 'node:fs';
-import type { IPlayerProvider } from '../../core/services/IPlayerProvider';
+import type { IPlayerProvider } from '@iplayertv/core';
 
 const execFileAsync = promisify(execFile);
 

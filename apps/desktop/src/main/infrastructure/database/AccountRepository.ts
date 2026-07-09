@@ -1,15 +1,17 @@
 import { randomUUID } from 'node:crypto';
-import type { Account } from '@shared/domain';
-import type { IAccountRepository } from '../../core/repositories/IAccountRepository';
+import type { Account } from '@iplayertv/core';
+import type { IAccountRepository } from '@iplayertv/core';
 import { getDatabase } from './DatabaseConnection';
 
+// better-sqlite3 is synchronous; methods are async only to satisfy the shared
+// IAccountRepository contract (the mobile SQLite implementation is truly async).
 export class AccountRepository implements IAccountRepository {
-  list(): Account[] {
+  async list(): Promise<Account[]> {
     const db = getDatabase();
     return db.prepare('SELECT * FROM accounts ORDER BY createdAt DESC').all() as Account[];
   }
 
-  create(payload: Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player'>): Account {
+  async create(payload: Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player'>): Promise<Account> {
     const db = getDatabase();
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -30,7 +32,7 @@ export class AccountRepository implements IAccountRepository {
     return account as Account;
   }
 
-  update(id: string, payload: Partial<Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player' | 'userAgent'>>): Account {
+  async update(id: string, payload: Partial<Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player' | 'userAgent'>>): Promise<Account> {
     const db = getDatabase();
     const existing = db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account | undefined;
     if (!existing) throw new Error(`Account not found: ${id}`);
@@ -46,10 +48,9 @@ export class AccountRepository implements IAccountRepository {
     return db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account;
   }
 
-  remove(id: string): void {
+  async remove(id: string): Promise<void> {
     const db = getDatabase();
     db.prepare('DELETE FROM accounts WHERE id = ?').run(id);
     db.prepare('DELETE FROM favorites WHERE accountId = ?').run(id);
-
   }
 }

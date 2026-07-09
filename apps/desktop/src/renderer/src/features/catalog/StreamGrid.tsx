@@ -1,4 +1,4 @@
-import type { Favorite, StreamItem, ContentType } from '@shared/domain';
+import type { Favorite, StreamItem, ContentType } from '@iplayertv/core';
 
 interface StreamGridProps {
   contentType: ContentType;

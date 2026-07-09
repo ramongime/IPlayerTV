@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Account } from '@shared/domain';
+import type { Account } from '@iplayertv/core';
 import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { StreamItem, EpgProgramme } from '@shared/domain';
+import type { StreamItem, EpgProgramme } from '@iplayertv/core';
 import { useTranslation } from 'react-i18next';
 
 interface EpgGridProps {

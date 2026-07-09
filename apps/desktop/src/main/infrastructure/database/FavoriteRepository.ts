@@ -1,14 +1,14 @@
-import type { Favorite } from '@shared/domain';
-import type { IFavoriteRepository } from '../../core/repositories/IFavoriteRepository';
+import type { Favorite } from '@iplayertv/core';
+import type { IFavoriteRepository } from '@iplayertv/core';
 import { getDatabase } from './DatabaseConnection';
 
 export class FavoriteRepository implements IFavoriteRepository {
-  list(accountId: string): Favorite[] {
+  async list(accountId: string): Promise<Favorite[]> {
     const db = getDatabase();
     return db.prepare('SELECT * FROM favorites WHERE accountId = ? ORDER BY createdAt DESC').all(accountId) as Favorite[];
   }
 
-  toggle(payload: Pick<Favorite, 'accountId' | 'contentType' | 'streamId' | 'name' | 'icon'>): boolean {
+  async toggle(payload: Pick<Favorite, 'accountId' | 'contentType' | 'streamId' | 'name' | 'icon'>): Promise<boolean> {
     const db = getDatabase();
 
     const existing = db.prepare('SELECT 1 FROM favorites WHERE accountId = ? AND contentType = ? AND streamId = ?')

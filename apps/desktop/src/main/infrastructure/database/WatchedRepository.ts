@@ -1,14 +1,14 @@
-import type { ContentType } from '@shared/domain';
-import type { IWatchedRepository } from '../../core/repositories/IWatchedRepository';
+import type { ContentType } from '@iplayertv/core';
+import type { IWatchedRepository } from '@iplayertv/core';
 import { getDatabase } from './DatabaseConnection';
 
 export class WatchedRepository implements IWatchedRepository {
-  list(accountId: string): Array<{ contentType: ContentType, streamId: number }> {
+  async list(accountId: string): Promise<Array<{ contentType: ContentType, streamId: number }>> {
     const db = getDatabase();
     return db.prepare('SELECT contentType, streamId FROM watched WHERE accountId = ?').all(accountId) as Array<{ contentType: ContentType, streamId: number }>;
   }
 
-  toggle(accountId: string, contentType: ContentType, streamId: number): boolean {
+  async toggle(accountId: string, contentType: ContentType, streamId: number): Promise<boolean> {
     const db = getDatabase();
 
     const existing = db.prepare('SELECT 1 FROM watched WHERE accountId = ? AND contentType = ? AND streamId = ?')
@@ -33,7 +33,7 @@ export class WatchedRepository implements IWatchedRepository {
     return true;
   }
 
-  clear(accountId?: string): void {
+  async clear(accountId?: string): Promise<void> {
     const db = getDatabase();
     if (accountId) {
       db.prepare('DELETE FROM watched WHERE accountId = ?').run(accountId);

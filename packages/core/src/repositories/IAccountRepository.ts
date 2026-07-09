@@ -1,8 +1,8 @@
-import type { Account } from '@shared/domain';
+import type { Account } from '../domain';
 
 export interface IAccountRepository {
-  list(): Account[];
-  create(payload: Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player'>): Account;
-  update(id: string, payload: Partial<Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player' | 'userAgent'>>): Account;
-  remove(id: string): void;
+  list(): Promise<Account[]>;
+  create(payload: Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player'>): Promise<Account>;
+  update(id: string, payload: Partial<Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player' | 'userAgent'>>): Promise<Account>;
+  remove(id: string): Promise<void>;
 }

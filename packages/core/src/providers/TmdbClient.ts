@@ -1,10 +1,13 @@
-import { net } from 'electron';
-import { TmdbInfo } from '@shared/domain';
+import type { TmdbInfo } from '../domain';
 
-export class TmdbProvider {
+// Minimal fetch surface so each platform injects its own implementation:
+// desktop passes Electron's net.fetch (bypasses CORS), mobile passes global fetch.
+export type FetchLike = (url: string) => Promise<Response>;
+
+export class TmdbClient {
   private cache: Map<string, TmdbInfo> = new Map();
 
-  constructor() {}
+  constructor(private fetchFn: FetchLike) {}
 
   async fetchInfo(name: string, type: 'movie' | 'series', apiKey: string): Promise<TmdbInfo | undefined> {
     if (!apiKey) return undefined;
@@ -21,7 +24,7 @@ export class TmdbProvider {
       const endpoint = type === 'movie' ? 'search/movie' : 'search/tv';
       const url = `https://api.themoviedb.org/3/${endpoint}?api_key=${apiKey}&query=${encodeURIComponent(cleanName)}&language=pt-BR&page=1`;
 
-      const response = await net.fetch(url);
+      const response = await this.fetchFn(url);
       if (!response.ok) {
         console.error(`TMDB API Error: ${response.statusText}`);
         return undefined;
