@@ -1,40 +1,55 @@
 # IPlayerTV
 
-Starter desktop para IPTV/Xtream em **Electron + React + TypeScript + SQLite**.
+Player IPTV/Xtream Codes para **desktop (Electron)** e **mobile (Expo/React Native)**, organizado como monorepo npm workspaces com um pacote core compartilhado.
 
-## O que já vem nessa versão
+## Estrutura do monorepo
+
+```
+IPlayerTV/
+├── packages/
+│   └── core/        # @iplayertv/core — domínio, XtreamProvider, TmdbClient,
+│                    #   interfaces (repos/serviços), contrato XtremeApi, i18n
+└── apps/
+    ├── desktop/     # Electron + React + Vite + better-sqlite3
+    └── mobile/      # Expo (expo-router, expo-sqlite, expo-video)
+```
+
+Regra de ouro: os apps importam do core **pelo nome do pacote** (`@iplayertv/core`), nunca por caminho relativo.
+
+## Comandos (sempre na raiz)
+
+```bash
+npm install          # instala tudo (workspaces, lock único)
+npm run dev          # builda o core e roda o desktop (Vite + Electron)
+npm run mobile       # builda o core e sobe o Expo (QR code p/ Expo Go)
+npm run dev:core     # tsc --watch do core (2º terminal, ao editar o core)
+npm run build        # build completo (core + desktop)
+npm run dist         # build + electron-builder (dmg/nsis/AppImage/deb)
+```
+
+## Desktop — o que já vem
 
 - Cadastro e validação de contas Xtream (credenciais testadas no servidor antes de salvar)
 - **Login via URL M3U**, além do cadastro Xtream tradicional
-- Biblioteca de **Live / Movies / Series**
-- **Favoritos** e **Histórico**
-- **EPG curto** para canais ao vivo
-- **Carregamento de episódios** para séries
+- Biblioteca de **Live / Movies / Series**, **Favoritos** e **Histórico**
+- **EPG curto** para canais ao vivo, episódios de séries
 - **Fallback de URL** para stream antes de abrir no player
-- Integração com **VLC**, **mpv** ou browser
+- Integração com **VLC**, **mpv**, browser ou player interno (hls.js)
 - **Controle parental** por PIN para categorias
-- Persistência local com SQLite
-- Script base de empacotamento com **electron-builder**
+- Persistência local com SQLite (better-sqlite3)
 
-## Rodando em desenvolvimento
+## Mobile — o que já vem (v1)
 
-```bash
-npm install
-npm run dev
-```
+- Login Xtream (com colar link M3U) validado no servidor
+- Abas **Canais / Filmes / Séries / Favoritos / Ajustes**
+- EPG "agora" na lista de canais ao vivo
+- Player nativo (**expo-video**: ExoPlayer/AVPlayer) com fallback de URL do core
+- Favoritos e histórico locais (expo-sqlite, mesmo schema do desktop)
+- Teste via **Expo Go**: `npm run mobile` e escaneie o QR code
 
-## Gerando build desktop
-
-```bash
-npm install
-npm run dist
-```
-
-## Configurações importantes
+## Configurações importantes (desktop)
 
 Abra as **Configurações** no app e informe o caminho do executável do player.
-
-Exemplos comuns:
 
 ### Windows
 - VLC: `C:\Program Files\VideoLAN\VLC\vlc.exe`
@@ -46,6 +61,7 @@ Exemplos comuns:
 
 ## Próximos upgrades recomendados
 
+- Build standalone do mobile (EAS + TestFlight)
 - Criptografia da senha salva
 - Download / gravação / catch-up
 - EPG XMLTV mais completo
