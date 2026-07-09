@@ -1,0 +1,16 @@
+{
+  "name": "iplayertv-monorepo",
+  "version": "0.0.6",
+  "private": true,
+  "description": "IPlayerTV monorepo: desktop (Electron) and mobile (Expo) IPTV players sharing @iplayertv/core.",
+  "author": "Ramon Gimenes <ramongimenes@gmail.com>",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/desktop",
+    "build": "npm run build -w apps/desktop",
+    "dist": "npm run dist -w apps/desktop"
+  }
+}
