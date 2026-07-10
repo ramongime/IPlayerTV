@@ -47,6 +47,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "ios:device": "LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo run:ios --device \"IPhone de Ramon\" --configuration Release",
+    "android:device": "expo run:android --variant release",
+    "android:apk": "expo prebuild -p android && cd android && ./gradlew assembleRelease && echo 'APK em: android/app/build/outputs/apk/release/app-release.apk'",
     "android:eas": "eas build --platform android --profile preview",
     "web": "expo start --web",
     "lint": "expo lint"

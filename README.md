@@ -47,6 +47,18 @@ npm run dist         # build + electron-builder (dmg/nsis/AppImage/deb)
 - Favoritos e histórico locais (expo-sqlite, mesmo schema do desktop)
 - Teste via **Expo Go**: `npm run mobile` e escaneie o QR code
 
+## Build Android local (sem EAS)
+
+Pré-requisitos: Node 20+, JDK 17 e Android Studio (com Android SDK e a variável `ANDROID_HOME` configurada).
+
+```bash
+npm install
+npm run android       # builda e instala direto no celular plugado via USB (depuração USB ativa)
+npm run android:apk   # só gera o arquivo APK (android/app/build/outputs/apk/release/app-release.apk)
+```
+
+O APK sai assinado com a chave de debug — perfeito para instalar manualmente (sideload), não serve para a Play Store.
+
 ## Configurações importantes (desktop)
 
 Abra as **Configurações** no app e informe o caminho do executável do player.

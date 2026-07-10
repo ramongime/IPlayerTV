@@ -13,6 +13,8 @@
     "dev:core": "npm run dev -w packages/core",
     "mobile": "npm run build -w packages/core && npm run start -w apps/mobile",
     "ios": "npm run build -w packages/core && npm run ios:device -w apps/mobile",
+    "android": "npm run build -w packages/core && npm run android:device -w apps/mobile",
+    "android:apk": "npm run build -w packages/core && npm run android:apk -w apps/mobile",
     "android:eas": "npm run android:eas -w apps/mobile",
     "build": "npm run build -w packages/core && npm run build -w apps/desktop",
     "dist": "npm run build -w packages/core && npm run dist -w apps/desktop"
