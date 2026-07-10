@@ -8,11 +8,22 @@ interface UseLibraryParams {
   enableSearchAll: boolean;
 }
 
+export const libraryKeys = {
+  all: ['library'] as const,
+  bases: () => [...libraryKeys.all, 'base'] as const,
+  base: (accountId: string | undefined, tab: ContentType) =>
+    [...libraryKeys.bases(), accountId, tab] as const,
+  streams: (accountId: string | undefined, tab: ContentType, categoryId: string, searchAll: boolean) =>
+    [...libraryKeys.all, 'streams', accountId, tab, categoryId, searchAll] as const,
+  nowPlaying: (accountId: string | undefined, tab: ContentType, categoryId: string, searchAll: boolean) =>
+    [...libraryKeys.all, 'now-playing', accountId, tab, categoryId, searchAll] as const,
+};
+
 export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearchAll }: UseLibraryParams) {
   const queryClient = useQueryClient();
 
   const baseDataQuery = useQuery({
-    queryKey: ['library-base', accountId, activeTab],
+    queryKey: libraryKeys.base(accountId, activeTab),
     queryFn: async () => {
       if (!accountId) return { categories: [], favorites: [], watched: [] };
       const [categories, favorites, watched] = await Promise.all([
@@ -37,7 +48,7 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   }
 
   const streamsQuery = useQuery({
-    queryKey: ['library-streams', accountId, activeTab, categoryToLoad, enableSearchAll],
+    queryKey: libraryKeys.streams(accountId, activeTab, categoryToLoad, enableSearchAll),
     queryFn: async () => {
       if (!accountId) return [];
       if (categoryToLoad === 'all' && !enableSearchAll) return [];
@@ -55,7 +66,7 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   const streams = streamsQuery.data ?? [];
 
   const nowPlayingQuery = useQuery({
-    queryKey: ['library-now-playing', accountId, activeTab, categoryToLoad, enableSearchAll],
+    queryKey: libraryKeys.nowPlaying(accountId, activeTab, categoryToLoad, enableSearchAll),
     queryFn: async () => {
       if (!accountId || activeTab !== 'live' || streams.length === 0) return {};
       
@@ -78,7 +89,7 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   const error = baseDataQuery.error || streamsQuery.error;
 
   const invalidateLibrary = () => {
-    queryClient.invalidateQueries({ queryKey: ['library-base'] });
+    queryClient.invalidateQueries({ queryKey: libraryKeys.bases() });
   };
 
   return {

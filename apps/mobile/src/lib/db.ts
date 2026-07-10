@@ -4,6 +4,8 @@ import * as SQLite from 'expo-sqlite';
 // platforms stay drop-in compatible with the shared repository contracts.
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
+PRAGMA busy_timeout = 5000;
+PRAGMA synchronous = NORMAL;
 
 CREATE TABLE IF NOT EXISTS accounts (
   id TEXT PRIMARY KEY,

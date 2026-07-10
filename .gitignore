@@ -6,4 +6,5 @@ dist-electron/
 *.log
 .DS_Store
 /.agents
+.claude/
 CLAUDE.md
