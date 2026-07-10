@@ -52,10 +52,15 @@ npm run dist         # build + electron-builder (dmg/nsis/AppImage/deb)
 Pré-requisitos: Node 20+, JDK 17 e Android Studio (com Android SDK e a variável `ANDROID_HOME` configurada).
 
 ```bash
-npm install
+# instala só o necessário para o mobile (evita o toolchain do Electron,
+# que no Windows exige Python + Visual Studio Build Tools)
+npm install -w packages/core -w apps/mobile
+
 npm run android       # builda e instala direto no celular plugado via USB (depuração USB ativa)
 npm run android:apk   # só gera o arquivo APK (android/app/build/outputs/apk/release/app-release.apk)
 ```
+
+Se for trabalhar também no desktop, use `npm install` completo (no Windows, instale antes o Python e o Visual Studio Build Tools, exigidos pelo better-sqlite3).
 
 O APK sai assinado com a chave de debug — perfeito para instalar manualmente (sideload), não serve para a Play Store.
 
