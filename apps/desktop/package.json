@@ -18,7 +18,7 @@
     "build:electron": "tsc -p tsconfig.electron.json",
     "dist": "npm run build && electron-builder",
     "preview": "vite preview",
-    "postinstall": "electron-rebuild -f -w better-sqlite3"
+    "postinstall": "node -e \"if (!process.env.EAS_BUILD) require('child_process').execSync('electron-rebuild -f -w better-sqlite3', { stdio: 'inherit' })\""
   },
   "dependencies": {
     "@iplayertv/core": "*",
