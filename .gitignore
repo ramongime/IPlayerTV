@@ -1,6 +1,7 @@
 node_modules
-/dist
-/dist-electron
+dist/
+dist-electron/
+.expo/
 /app-data
 *.log
 .DS_Store
