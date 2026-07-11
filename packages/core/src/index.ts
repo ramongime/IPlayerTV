@@ -16,7 +16,17 @@ export type { IFavoriteRepository } from './repositories/IFavoriteRepository';
 export type { IWatchedRepository } from './repositories/IWatchedRepository';
 export type { IXtreamProvider } from './services/IXtreamProvider';
 export type { IPlayerProvider } from './services/IPlayerProvider';
-export type { XtremeApi } from './api/XtremeApi';
+
+// API surface & typed payloads
+export type {
+  XtremeApi,
+  PlayerOpenPayload,
+  PlayerResolvePayload,
+  PlayerCatchupPayload,
+  PlayerProbePayload,
+  FavoriteTogglePayload,
+  AccountInfoResponse,
+} from './api/XtremeApi';
 
 // Shared i18n resources
 export { resources } from './i18n/resources';

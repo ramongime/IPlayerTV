@@ -59,7 +59,7 @@ export default function LoginScreen() {
       // Validate credentials against the server before persisting (same rule as desktop)
       const result = await xtream.authenticate(input);
       if (!result.ok) {
-        throw new Error('Não foi possível validar a conta: credenciais inválidas ou servidor Xtream inacessível.');
+        throw new Error(t('login.validationError'));
       }
 
       const account = await accountsRepo.create(input);
@@ -86,31 +86,31 @@ export default function LoginScreen() {
         <Text style={styles.title}>{t('emptyState.title')}</Text>
         <Text style={styles.subtitle}>{t('emptyState.subtitle')}</Text>
 
-        <Text style={styles.label}>Link M3U (opcional — preenche os campos)</Text>
+        <Text style={styles.label}>{t('login.m3uLabel')}</Text>
         <TextInput
           value={m3u}
           onChangeText={applyM3u}
-          placeholder="http://servidor:80/get.php?username=...&password=..."
+          placeholder={t('login.m3uPlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           style={styles.input}
         />
 
-        <Text style={styles.label}>Nome</Text>
+        <Text style={styles.label}>{t('login.name')}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="Minha conta"
+          placeholder={t('login.namePlaceholder')}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
         />
 
-        <Text style={styles.label}>Servidor</Text>
+        <Text style={styles.label}>{t('login.server')}</Text>
         <TextInput
           value={server}
           onChangeText={setServer}
-          placeholder="http://servidor.com:8080"
+          placeholder={t('login.serverPlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
@@ -118,7 +118,7 @@ export default function LoginScreen() {
           style={styles.input}
         />
 
-        <Text style={styles.label}>Usuário</Text>
+        <Text style={styles.label}>{t('login.user')}</Text>
         <TextInput
           value={username}
           onChangeText={setUsername}
@@ -127,7 +127,7 @@ export default function LoginScreen() {
           style={styles.input}
         />
 
-        <Text style={styles.label}>Senha</Text>
+        <Text style={styles.label}>{t('login.password')}</Text>
         <TextInput
           value={password}
           onChangeText={setPassword}

@@ -33,6 +33,19 @@ export class WatchedRepository implements IWatchedRepository {
     return true;
   }
 
+  async markWatched(accountId: string, contentType: ContentType, streamId: number): Promise<void> {
+    const db = getDatabase();
+    db.prepare(`
+      INSERT OR IGNORE INTO watched (accountId, contentType, streamId, createdAt)
+      VALUES (@accountId, @contentType, @streamId, @createdAt)
+    `).run({
+      accountId,
+      contentType,
+      streamId,
+      createdAt: new Date().toISOString()
+    });
+  }
+
   async clear(accountId?: string): Promise<void> {
     const db = getDatabase();
     if (accountId) {

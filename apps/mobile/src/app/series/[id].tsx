@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { watchedRepo } from '@/lib/repositories';
 import { resolveAccount, xtream } from '@/lib/services';
@@ -14,6 +15,7 @@ export default function SeriesDetailScreen() {
   const accountId = useAppStore((s) => s.activeAccountId);
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const episodesQuery = useQuery({
     queryKey: ['series-episodes', accountId, id],
@@ -41,7 +43,7 @@ export default function SeriesDetailScreen() {
     }
     return [...bySeason.entries()]
       .sort(([a], [b]) => a - b)
-      .map(([season, data]) => ({ title: `Temporada ${season}`, data }));
+      .map(([season, data]) => ({ title: t('series.season', { season }), data }));
   }, [episodesQuery.data]);
 
   const playEpisode = (episode: Episode) => {
@@ -61,7 +63,7 @@ export default function SeriesDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: title ?? 'Série' }} />
+      <Stack.Screen options={{ title: title ?? t('series.title') }} />
       {cover ? (
         <Image source={{ uri: cover }} style={styles.cover} contentFit="cover" transition={200} />
       ) : null}

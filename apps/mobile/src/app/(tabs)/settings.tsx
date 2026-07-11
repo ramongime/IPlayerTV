@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -7,10 +8,15 @@ import { accountsRepo, watchedRepo } from '@/lib/repositories';
 import { resolveAccount, xtream } from '@/lib/services';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/theme';
+import { PinModal } from '@/components/PinModal';
 
 export default function SettingsScreen() {
   const accountId = useAppStore((s) => s.activeAccountId);
   const setActiveAccountId = useAppStore((s) => s.setActiveAccountId);
+  const parentalPin = useAppStore((s) => s.parentalPin);
+  const setParentalPin = useAppStore((s) => s.setParentalPin);
+  
+  const [showPin, setShowPin] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -74,7 +80,43 @@ export default function SettingsScreen() {
           queryClient.invalidateQueries({ queryKey: ['watched', accountId] });
         },
       },
-    ]);
+  const resetHiddenCategories = () => {
+    useAppStore.setState((state) => {
+      if (!accountId) return state;
+      const newHidden = { ...state.hiddenCategories };
+      Object.keys(newHidden).forEach(key => {
+        if (key.startsWith(`${accountId}:`)) {
+          delete newHidden[key];
+        }
+      });
+      return { hiddenCategories: newHidden };
+    });
+    Alert.alert(t('common.success'), t('settings.hiddenCategoriesReset'));
+  };
+
+  const handleResetRequest = () => {
+    if (parentalPin) {
+      setShowPin(true);
+    } else {
+      resetHiddenCategories();
+    }
+  };
+
+  const handleSetPin = () => {
+    Alert.prompt(
+      t('settings.parentalPin'),
+      t('settings.enterNewPin'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('common.save'), 
+          onPress: (pin) => setParentalPin(pin || undefined)
+        }
+      ],
+      'secure-text',
+      parentalPin || '',
+      'number-pad'
+    );
   };
 
   return (
@@ -123,6 +165,55 @@ export default function SettingsScreen() {
           <Text style={styles.buttonDangerText}>{t('common.remove')} {t('common.history').toLowerCase()}</Text>
         </Pressable>
       </View>
+
+      <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
+      <View style={styles.card}>
+        <View style={styles.infoRow}>
+          <Text style={styles.muted}>{t('settings.parentalPin')}</Text>
+          <Pressable onPress={handleSetPin}>
+            <Text style={styles.infoValue}>{parentalPin ? '****' : t('settings.notSet')}</Text>
+          </Pressable>
+        </View>
+
+        <View style={[styles.infoRow, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, marginTop: 4 }]}>
+          <Text style={styles.muted}>{t('settings.tmdbKey')}</Text>
+          <Pressable onPress={() => {
+            Alert.prompt(
+              t('settings.tmdbKey'),
+              'TMDB API Key (v3 auth)',
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { 
+                  text: t('common.save'), 
+                  onPress: (key) => useAppStore.getState().setTmdbApiKey(key || undefined)
+                }
+              ],
+              'plain-text',
+              useAppStore.getState().tmdbApiKey || ''
+            );
+          }}>
+            <Text style={styles.infoValue}>
+              {useAppStore.getState().tmdbApiKey 
+                ? '••••' + useAppStore.getState().tmdbApiKey!.slice(-4) 
+                : t('settings.notSet')}
+            </Text>
+          </Pressable>
+        </View>
+
+        <Pressable onPress={handleResetRequest} style={[styles.button, { marginTop: 16 }]}>
+          <Text style={styles.buttonText}>{t('settings.resetHiddenCategories')}</Text>
+        </Pressable>
+      </View>
+      
+      <PinModal 
+        visible={showPin} 
+        correctPin={parentalPin || ''}
+        onSuccess={() => {
+          setShowPin(false);
+          resetHiddenCategories();
+        }}
+        onCancel={() => setShowPin(false)}
+      />
     </ScrollView>
   );
 }

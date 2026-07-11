@@ -1,54 +1,97 @@
-import type { ContentType, TmdbInfo } from '../domain';
+import type { Account, AppConfig, Category, ContentType, EpgProgramme, Episode, Favorite, NowPlayingMap, StreamItem, TmdbInfo } from '../domain';
+import type { AccountInput, AccountUpdateInput } from '../domain/schemas';
+
+// Payload types for the player namespace
+export interface PlayerOpenPayload {
+  accountId: string;
+  contentType: ContentType;
+  streamId: number;
+  name?: string;
+  extension?: string;
+}
+
+export interface PlayerResolvePayload {
+  accountId: string;
+  contentType: ContentType;
+  streamId: number;
+  extension?: string;
+}
+
+export interface PlayerCatchupPayload {
+  accountId: string;
+  streamId: number;
+  name?: string;
+  startRaw: string;
+  durationMinutes: number;
+  extension?: string;
+}
+
+export interface PlayerProbePayload {
+  accountId: string;
+  contentType: ContentType;
+  streamId: number;
+  extension?: string;
+}
+
+export interface FavoriteTogglePayload {
+  accountId: string;
+  contentType: ContentType;
+  streamId: number;
+  name: string;
+  icon?: string;
+}
+
+export interface AccountInfoResponse {
+  status: string;
+  expDate: string;
+  activeConnections: number;
+  maxConnections: string;
+  allowedFormats: string[];
+  serverUrl: string;
+  serverTimezone: string;
+}
 
 // Shape of the client-facing API surface. On desktop it is implemented by the
 // Electron preload bridge (window.xtremeApi → ipcRenderer.invoke); on mobile it
 // is implemented in-process by wiring the core providers/repositories directly.
 export interface XtremeApi {
   accounts: {
-    list: () => Promise<any[]>;
-    create: (payload: any) => Promise<any>;
-    update: (id: string, payload: any) => Promise<any>;
-    remove: (id: string) => Promise<any>;
-    info: (accountId: string) => Promise<{
-      status: string;
-      expDate: string;
-      activeConnections: number;
-      maxConnections: string;
-      allowedFormats: string[];
-      serverUrl: string;
-      serverTimezone: string;
-    }>;
+    list: () => Promise<Account[]>;
+    create: (payload: AccountInput) => Promise<Account>;
+    update: (id: string, payload: AccountUpdateInput) => Promise<Account>;
+    remove: (id: string) => Promise<void>;
+    info: (accountId: string) => Promise<AccountInfoResponse>;
   };
   xtream: {
-    categories: (accountId: string, contentType: ContentType) => Promise<any[]>;
-    streams: (accountId: string, contentType: ContentType, categoryId?: string) => Promise<any[]>;
-    seriesEpisodes: (accountId: string, seriesId: number) => Promise<any[]>;
-    epg: (accountId: string, streamId: number, limit?: number) => Promise<any[]>;
-    epgTable: (accountId: string, streamIds: string) => Promise<Record<string, any[]>>;
-    nowPlaying: (accountId: string, streamIds: number[]) => Promise<Record<number, string>>;
+    categories: (accountId: string, contentType: ContentType) => Promise<Category[]>;
+    streams: (accountId: string, contentType: ContentType, categoryId?: string) => Promise<StreamItem[]>;
+    seriesEpisodes: (accountId: string, seriesId: number) => Promise<Episode[]>;
+    epg: (accountId: string, streamId: number, limit?: number) => Promise<EpgProgramme[]>;
+    epgTable: (accountId: string, streamIds: string) => Promise<Record<string, EpgProgramme[]>>;
+    nowPlaying: (accountId: string, streamIds: number[]) => Promise<NowPlayingMap>;
   };
   favorites: {
-    list: (accountId: string) => Promise<any[]>;
-    toggle: (payload: any) => Promise<{ favorite: boolean }>;
+    list: (accountId: string) => Promise<Favorite[]>;
+    toggle: (payload: FavoriteTogglePayload) => Promise<{ favorite: boolean }>;
   };
   watched: {
-    list: (accountId: string) => Promise<Array<{ contentType: string; streamId: number }>>;
-    toggle: (accountId: string, contentType: string, streamId: number) => Promise<boolean>;
+    list: (accountId: string) => Promise<Array<{ contentType: ContentType; streamId: number }>>;
+    toggle: (accountId: string, contentType: ContentType, streamId: number) => Promise<boolean>;
     clear: (accountId?: string) => Promise<void>;
   };
   tmdb: {
     fetchInfo: (name: string, type: 'movie' | 'series') => Promise<TmdbInfo | undefined>;
   };
   player: {
-    open: (payload: any) => Promise<{ method: string; url: string }>;
-    resolveUrl: (payload: any) => Promise<{ url: string }>;
-    openCatchup: (payload: any) => Promise<{ method: string; url: string }>;
-    resolveCatchupUrl: (payload: any) => Promise<{ url: string }>;
-    probe: (payload: any) => Promise<{ url: string }>;
+    open: (payload: PlayerOpenPayload) => Promise<{ method: string; url: string }>;
+    resolveUrl: (payload: PlayerResolvePayload) => Promise<{ url: string }>;
+    openCatchup: (payload: PlayerCatchupPayload) => Promise<{ method: string; url: string }>;
+    resolveCatchupUrl: (payload: PlayerCatchupPayload) => Promise<{ url: string }>;
+    probe: (payload: PlayerProbePayload) => Promise<{ url: string }>;
   };
   settings: {
-    get: () => Promise<any>;
-    update: (payload: any) => Promise<any>;
+    get: () => Promise<AppConfig>;
+    update: (payload: Partial<AppConfig>) => Promise<AppConfig>;
   };
   shell: {
     openExternal: (url: string) => Promise<void>;

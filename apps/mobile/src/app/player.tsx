@@ -51,6 +51,7 @@ export default function PlayerScreen() {
         headers: userAgent ? { 'User-Agent': userAgent } : undefined,
       })
       .then(() => {
+        player.staysActiveInBackground = true;
         player.play();
       })
       .catch(() => {});
@@ -73,6 +74,8 @@ export default function PlayerScreen() {
           style={styles.video}
           contentFit="contain"
           nativeControls
+          allowsPictureInPicture
+          startsPictureInPictureAutomatically
           fullscreenOptions={{ enable: true }}
         />
       )}
