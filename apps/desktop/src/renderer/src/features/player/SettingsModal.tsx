@@ -431,6 +431,50 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
               </div>
             )}
           </div>
+
+          {/* Backup / Restore Section */}
+          <div style={{
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '14px',
+            padding: '16px',
+            background: 'rgba(255,255,255,0.02)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}>
+            <div>
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>{t('settingsModal.backupTitle', 'Backup de Configurações')}</span>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                {t('settingsModal.backupDesc', 'Exporte ou restaure contas e configurações em um arquivo JSON')}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="ghost-button"
+                style={{ padding: '6px 12px', fontSize: '13px', whiteSpace: 'nowrap' }}
+                onClick={async () => {
+                  const res = await window.xtremeApi.backup.export();
+                  if (res.ok) alert(t('settingsModal.backupExported', 'Backup exportado com sucesso'));
+                }}
+              >
+                {t('settingsModal.backupExport', 'Exportar')}
+              </button>
+              <button
+                className="ghost-button"
+                style={{ padding: '6px 12px', fontSize: '13px', whiteSpace: 'nowrap' }}
+                onClick={async () => {
+                  const res = await window.xtremeApi.backup.import();
+                  if (res.ok) {
+                    alert(t('settingsModal.backupImported', 'Backup importado com sucesso'));
+                    onClose();
+                  }
+                }}
+              >
+                {t('settingsModal.backupImport', 'Importar')}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="modal-actions">

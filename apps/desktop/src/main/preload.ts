@@ -44,6 +44,10 @@ const xtremeApi = {
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url)
   },
+  backup: {
+    export: () => ipcRenderer.invoke('backup:export'),
+    import: () => ipcRenderer.invoke('backup:import')
+  },
   window: {
     togglePip: (enable: boolean) => ipcRenderer.invoke('window:togglePip', enable),
     download: (url: string) => ipcRenderer.invoke('window:download', url)

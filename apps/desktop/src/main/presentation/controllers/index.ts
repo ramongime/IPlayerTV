@@ -12,6 +12,7 @@ import { registerTmdbIPC } from './TmdbController';
 import { registerXtreamIPC } from './XtreamController';
 import { registerPlayerIPC } from './PlayerController';
 import { registerSettingsIPC } from './SettingsController';
+import { registerBackupIPC } from './BackupController';
 import { registerWindowIPC } from './WindowController';
 
 export function registerControllers() {
@@ -30,5 +31,6 @@ export function registerControllers() {
   registerXtreamIPC(accountsRepo, xtreamProvider);
   registerPlayerIPC(accountsRepo, xtreamProvider, playerProvider);
   registerSettingsIPC(settingsProvider);
+  registerBackupIPC(accountsRepo, settingsProvider);
   registerWindowIPC();
 }
