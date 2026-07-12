@@ -1,11 +1,14 @@
+import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Category, Favorite, StreamItem, ContentType } from '@iplayertv/core';
+import type { Category, Favorite, StreamItem, ContentType, ShelfView } from '@iplayertv/core';
 
 interface UseLibraryParams {
   accountId?: string;
   activeTab: ContentType;
   activeCategoryId: string;
   enableSearchAll: boolean;
+  search?: string;
+  shelfView?: ShelfView;
 }
 
 export const libraryKeys = {
@@ -15,11 +18,11 @@ export const libraryKeys = {
     [...libraryKeys.bases(), accountId, tab] as const,
   streams: (accountId: string | undefined, tab: ContentType, categoryId: string, searchAll: boolean) =>
     [...libraryKeys.all, 'streams', accountId, tab, categoryId, searchAll] as const,
-  nowPlaying: (accountId: string | undefined, tab: ContentType, categoryId: string, searchAll: boolean) =>
-    [...libraryKeys.all, 'now-playing', accountId, tab, categoryId, searchAll] as const,
+  nowPlaying: (accountId: string | undefined, tab: ContentType, categoryId: string, searchAll: boolean, search?: string, shelfView?: ShelfView) =>
+    [...libraryKeys.all, 'now-playing', accountId, tab, categoryId, searchAll, search, shelfView] as const,
 };
 
-export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearchAll }: UseLibraryParams) {
+export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearchAll, search = '', shelfView = 'catalog' }: UseLibraryParams) {
   const queryClient = useQueryClient();
 
   const baseDataQuery = useQuery({
@@ -65,20 +68,68 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
 
   const streams = streamsQuery.data ?? [];
 
+  const filteredStreams = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+    const base = shelfView === 'catalog'
+      ? streams
+      : streams.filter((stream) => favorites.some((fav) => fav.contentType === activeTab && fav.streamId === (stream.stream_id ?? stream.series_id ?? 0)));
+
+    if (!normalized) return base;
+    return base.filter((item) => item.name.toLowerCase().includes(normalized));
+  }, [streams, search, favorites, shelfView, activeTab]);
+
   const nowPlayingQuery = useQuery({
-    queryKey: libraryKeys.nowPlaying(accountId, activeTab, categoryToLoad, enableSearchAll),
+    queryKey: libraryKeys.nowPlaying(accountId, activeTab, categoryToLoad, enableSearchAll, search, shelfView),
     queryFn: async () => {
-      if (!accountId || activeTab !== 'live' || streams.length === 0) return {};
+      if (!accountId || activeTab !== 'live' || filteredStreams.length === 0) return {};
       
-      const streamIds = streams
+      const streamsToFetch = filteredStreams
         .filter(s => s.stream_id)
-        .slice(0, 50)
-        .map(s => s.stream_id as number);
+        .slice(0, 150);
         
-      if (streamIds.length === 0) return {};
-      return window.xtremeApi.xtream.nowPlaying(accountId, streamIds);
+      if (streamsToFetch.length === 0) return {};
+
+      const BATCH_SIZE = 50;
+      let epgData: Record<string, any[]> = {};
+      
+      for (let i = 0; i < streamsToFetch.length; i += BATCH_SIZE) {
+        const batch = streamsToFetch.slice(i, i + BATCH_SIZE);
+        const streamIdsStr = batch.map(s => s.stream_id).join(',');
+        try {
+          const batchData = await window.xtremeApi.xtream.epgTable(accountId, streamIdsStr);
+          epgData = { ...epgData, ...batchData };
+        } catch (e) {
+          console.error('Failed to fetch EPG batch', e);
+        }
+      }
+
+      const nowPlayingMap: Record<number, string> = {};
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      for (const stream of streamsToFetch) {
+        if (!stream.stream_id) continue;
+        const programmes = epgData[String(stream.stream_id)] || (stream.epg_channel_id ? epgData[stream.epg_channel_id] : null) || [];
+        
+        const now = programmes.find(prog => {
+          if (prog.start_timestamp && prog.stop_timestamp) {
+            return prog.start_timestamp <= currentTime && prog.stop_timestamp > currentTime;
+          }
+          if (!prog.start_raw || !prog.end_raw) return false;
+          const pStart = new Date(prog.start_raw.replace(' ', 'T')).getTime() / 1000;
+          const pEnd = new Date(prog.end_raw.replace(' ', 'T')).getTime() / 1000;
+          return pStart <= currentTime && pEnd > currentTime;
+        });
+
+        if (now?.title) {
+          nowPlayingMap[stream.stream_id] = now.title;
+        } else if (programmes.length > 0 && programmes[0].title) {
+          nowPlayingMap[stream.stream_id] = programmes[0].title;
+        }
+      }
+
+      return nowPlayingMap;
     },
-    enabled: !!accountId && activeTab === 'live' && streams.length > 0,
+    enabled: !!accountId && activeTab === 'live' && filteredStreams.length > 0,
     staleTime: 60 * 1000,
     refetchInterval: 60 * 1000, // Refresh every minute
   });
@@ -95,9 +146,8 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   return {
     categories,
     favorites,
-
     watched,
-    streams,
+    streams: filteredStreams,
     nowPlaying,
     categoryToLoad,
     isLoading,

@@ -131,7 +131,7 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
 
           {streams.map((stream) => {
             const streamId = stream.stream_id as number;
-            const programmes = epgData[String(streamId)] || [];
+            const programmes = epgData[String(streamId)] || (stream.epg_channel_id ? epgData[stream.epg_channel_id] : null) || [];
 
             return (
               <div key={streamId} className="epg-row">

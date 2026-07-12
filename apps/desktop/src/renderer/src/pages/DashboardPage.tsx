@@ -57,7 +57,9 @@ export function DashboardPage() {
     accountId: activeAccountId,
     activeTab,
     activeCategoryId,
-    enableSearchAll
+    enableSearchAll,
+    search,
+    shelfView
   });
 
   const {
@@ -117,22 +119,12 @@ export function DashboardPage() {
     }
   });
 
-  const filteredStreams = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-    const base = shelfView === 'catalog'
-      ? streams
-      : streams.filter((stream) => favorites.some((fav) => fav.contentType === activeTab && fav.streamId === (stream.stream_id ?? stream.series_id ?? 0)));
-
-    if (!normalized) return base;
-    return base.filter((item) => item.name.toLowerCase().includes(normalized));
-  }, [streams, search, favorites, shelfView, activeTab]);
-
   const featuredStream = useMemo(() => {
-    if (filteredStreams.length > 0 && shelfView === 'catalog' && (activeTab === 'movie' || activeTab === 'series') && !search) {
-      return filteredStreams.find(s => s.cover || s.stream_icon) || filteredStreams[0];
+    if (streams.length > 0 && shelfView === 'catalog' && (activeTab === 'movie' || activeTab === 'series') && !search) {
+      return streams.find(s => s.cover || s.stream_icon) || streams[0];
     }
     return null;
-  }, [filteredStreams, shelfView, activeTab, search]);
+  }, [streams, shelfView, activeTab, search]);
 
   return (
     <div className={`app-shell ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`}>
@@ -246,9 +238,9 @@ export function DashboardPage() {
               {!loading && viewMode === 'epg' && activeTab === 'live' && (
                 <EpgGrid 
                   accountId={activeAccountId} 
-                  streams={filteredStreams} 
+                  streams={streams} 
                   onPlayLive={(streamId) => {
-                    const stream = filteredStreams.find(s => s.stream_id === streamId);
+                    const stream = streams.find(s => s.stream_id === streamId);
                     if (stream) playItem(stream);
                   }}
                   onPlayArchive={async (streamId, title, startRaw, durationMinutes) => {
@@ -267,7 +259,7 @@ export function DashboardPage() {
               {!loading && (viewMode === 'cards' || activeTab !== 'live') && (
                 <StreamGrid
                   contentType={activeTab}
-                  streams={featuredStream ? filteredStreams.filter(s => s !== featuredStream) : filteredStreams}
+                  streams={featuredStream ? streams.filter(s => s !== featuredStream) : streams}
                   favorites={favorites}
                   watched={watched}
                   nowPlaying={activeTab === 'live' ? nowPlaying : undefined}

@@ -92,8 +92,10 @@ export interface EpgProgramme {
   description?: string;
   start?: string;
   start_raw?: string;
+  start_timestamp?: number;
   end?: string;
   end_raw?: string;
+  stop_timestamp?: number;
   now_playing?: string;
   has_archive?: number;
 }

@@ -113,20 +113,38 @@ export class XtreamProvider implements IXtreamProvider {
 
   async nowPlaying(account: Account, streamIds: number[]): Promise<NowPlayingMap> {
     const result: NowPlayingMap = {};
-    const CONCURRENCY = 5;
+    const BATCH_SIZE = 100;
 
-    for (let i = 0; i < streamIds.length; i += CONCURRENCY) {
-      const batch = streamIds.slice(i, i + CONCURRENCY);
-      await Promise.allSettled(
-        batch.map(async (streamId) => {
-          const items = await this.shortEpg(account, streamId, 2);
-          // Find the programme that is currently airing or the first one
-          const now = items.length > 0 ? items[0] : undefined;
+    for (let i = 0; i < streamIds.length; i += BATCH_SIZE) {
+      const batch = streamIds.slice(i, i + BATCH_SIZE);
+      const streamIdsStr = batch.join(',');
+
+      try {
+        const epgData = await this.getEpgTable(account, streamIdsStr);
+        const currentTime = Math.floor(new Date().getTime() / 1000);
+        console.log(`[nowPlaying] EPG Data received for batch size ${batch.length}`);
+
+        for (const [streamId, programmes] of Object.entries(epgData)) {
+          const now = programmes.find(prog => {
+            if (prog.start_timestamp && prog.stop_timestamp) {
+              return prog.start_timestamp <= currentTime && prog.stop_timestamp > currentTime;
+            }
+            if (!prog.start_raw || !prog.end_raw) return false;
+            const pStart = new Date(prog.start_raw.replace(' ', 'T')).getTime() / 1000;
+            const pEnd = new Date(prog.end_raw.replace(' ', 'T')).getTime() / 1000;
+            return pStart <= currentTime && pEnd > currentTime;
+          });
+
           if (now?.title) {
-            result[streamId] = now.title;
+            result[Number(streamId)] = now.title;
+          } else if (programmes.length > 0 && programmes[0].title) {
+            result[Number(streamId)] = programmes[0].title;
           }
-        })
-      );
+        }
+        console.log(`[nowPlaying] Mapped ${Object.keys(result).length} current programs`);
+      } catch (err) {
+        console.error('Error fetching nowPlaying batch with getEpgTable', err);
+      }
     }
 
     return result;
@@ -174,8 +192,10 @@ export class XtreamProvider implements IXtreamProvider {
       description: decodeBase64(raw.description) || undefined,
       start: startTs ? this.formatEpgTime(startTs) : this.formatEpgTime(raw.start),
       start_raw: typeof raw.start === 'string' ? raw.start : undefined,
+      start_timestamp: startTs || undefined,
       end: stopTs ? this.formatEpgTime(stopTs) : this.formatEpgTime(raw.end),
       end_raw: typeof raw.end === 'string' ? raw.end : undefined,
+      stop_timestamp: stopTs || undefined,
       now_playing: typeof raw.now_playing === 'string' ? raw.now_playing : undefined,
       has_archive: typeof raw.has_archive === 'number' ? raw.has_archive : undefined
     };
