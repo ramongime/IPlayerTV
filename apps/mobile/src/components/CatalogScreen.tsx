@@ -1,6 +1,6 @@
 import type { Category, ContentType, StreamItem } from '@iplayertv/core';
 import { FlashList } from '@shopify/flash-list';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { favoritesRepo, watchedRepo } from '@/lib/repositories';
+import * as Haptics from 'expo-haptics';
+import { favoritesRepo } from '@/lib/repositories';
+import { tmdb, DEFAULT_TMDB_API_KEY } from '@/lib/services';
+import { tmdbKeys } from '@/lib/queryKeys';
 import { useAppStore } from '@/lib/store';
 import { useLibrary } from '@/hooks/useLibrary';
 import { StreamCard } from '@/components/StreamCard';
@@ -30,7 +33,6 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState('');
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -75,11 +77,11 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
   }, [filtered, contentType, search]);
 
   const tmdbQuery = useQuery({
-    queryKey: ['tmdb', contentType, featuredStream?.name],
+    queryKey: tmdbKeys.info(contentType, featuredStream?.name),
     enabled: !!featuredStream && (contentType === 'movie' || contentType === 'series'),
     staleTime: 1000 * 60 * 60 * 24, // 24h
     queryFn: () => {
-      const apiKey = useAppStore.getState().tmdbApiKey || 'a43d0032bda98c8c4cc815fb5a639dfc';
+      const apiKey = useAppStore.getState().tmdbApiKey || DEFAULT_TMDB_API_KEY;
       return tmdb.fetchInfo(featuredStream!.name, contentType as 'movie' | 'series', apiKey);
     },
   });
@@ -90,10 +92,6 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
     return filtered.filter((s) => s !== featuredStream);
   }, [filtered, featuredStream]);
 
-  if (hasHydrated && !accountId) {
-    return <Redirect href="/login" />;
-  }
-
   const idOf = (item: StreamItem) => (contentType === 'series' ? item.series_id : item.stream_id) ?? 0;
 
   const openItem = (item: StreamItem) => {
@@ -102,6 +100,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
   };
 
   const toggleFavorite = async (item: StreamItem) => {
+    Haptics.selectionAsync();
     await favoritesRepo.toggle({
       accountId: accountId!,
       contentType,
@@ -203,6 +202,10 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
     );
   }, [featuredStream, isGridMode, contentType]);
 
+  if (hasHydrated && !accountId) {
+    return <Redirect href="/login" />;
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <TextInput
@@ -251,7 +254,6 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
             />
           }
           extraData={[favoriteIds, nowPlaying]}
-          estimatedItemSize={250}
         />
       ) : (
         <FlashList

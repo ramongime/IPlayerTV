@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import type { ContentType, StreamItem, EpgProgramme, Episode } from '@iplayertv/core';
-import { tmdb, xtream, resolveAccount } from '@/lib/services';
+import type { ContentType, StreamItem } from '@iplayertv/core';
+import * as Haptics from 'expo-haptics';
+import { tmdb, xtream, resolveAccount, DEFAULT_TMDB_API_KEY } from '@/lib/services';
+import { tmdbKeys, epgKeys } from '@/lib/queryKeys';
+import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,18 +28,18 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
 
   // Fetch TMDB
   const tmdbQuery = useQuery({
-    queryKey: ['tmdb', contentType, item?.name],
+    queryKey: tmdbKeys.info(contentType, item?.name),
     enabled: visible && !!item && (contentType === 'movie' || contentType === 'series'),
     staleTime: 1000 * 60 * 60 * 24,
     queryFn: () => {
-      const apiKey = useAppStore.getState().tmdbApiKey || 'a43d0032bda98c8c4cc815fb5a639dfc';
+      const apiKey = useAppStore.getState().tmdbApiKey || DEFAULT_TMDB_API_KEY;
       return tmdb.fetchInfo(item!.name, contentType as 'movie' | 'series', apiKey);
     },
   });
 
   // Fetch EPG for Live TV
   const epgQuery = useQuery({
-    queryKey: ['epg', accountId, item?.stream_id],
+    queryKey: epgKeys.short(accountId, item?.stream_id),
     enabled: visible && !!item && contentType === 'live' && !!accountId,
     queryFn: async () => {
       const account = await resolveAccount(accountId!);
@@ -54,6 +56,7 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
   const releaseYear = tmdbQuery.data?.releaseDate?.split('-')[0];
 
   const handlePlay = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onClose();
     if (contentType === 'series') {
       router.push({

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ContentType, Category, Favorite, StreamItem, NowPlayingMap, TmdbInfo } from '@iplayertv/core';
+import type { ContentType, NowPlayingMap } from '@iplayertv/core';
 import { favoritesRepo, watchedRepo } from '@/lib/repositories';
-import { resolveAccount, tmdb, xtream } from '@/lib/services';
+import { resolveAccount, xtream } from '@/lib/services';
 import { useAppStore } from '@/lib/store';
 
 interface UseLibraryParams {

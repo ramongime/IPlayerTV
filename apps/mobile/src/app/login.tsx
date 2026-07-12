@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
 import { ZodError } from 'zod';
 import { accountsRepo } from '@/lib/repositories';

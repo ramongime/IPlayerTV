@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -13,6 +14,28 @@ interface AppState {
   setParentalPin: (pin?: string) => void;
   tmdbApiKey?: string;
   setTmdbApiKey: (key?: string) => void;
+}
+
+// Sensitive values live in the OS keychain/keystore, not in plaintext AsyncStorage
+// (see security-reactnative). expo-secure-store works in Expo Go.
+const SECURE_KEYS = { parentalPin: 'parentalPin', tmdbApiKey: 'tmdbApiKey' } as const;
+
+async function secureWrite(key: string, value?: string) {
+  try {
+    if (value) await SecureStore.setItemAsync(key, value);
+    else await SecureStore.deleteItemAsync(key);
+  } catch (e) {
+    console.warn(`SecureStore write failed for ${key}:`, e);
+  }
+}
+
+async function secureRead(key: string): Promise<string | undefined> {
+  try {
+    return (await SecureStore.getItemAsync(key)) ?? undefined;
+  } catch (e) {
+    console.warn(`SecureStore read failed for ${key}:`, e);
+    return undefined;
+  }
 }
 
 export const useAppStore = create<AppState>()(
@@ -32,21 +55,46 @@ export const useAppStore = create<AppState>()(
         return { hiddenCategories: { ...state.hiddenCategories, [key]: next } };
       }),
       parentalPin: undefined,
-      setParentalPin: (pin) => set({ parentalPin: pin }),
+      setParentalPin: (pin) => {
+        set({ parentalPin: pin });
+        void secureWrite(SECURE_KEYS.parentalPin, pin);
+      },
       tmdbApiKey: undefined,
-      setTmdbApiKey: (key) => set({ tmdbApiKey: key }),
+      setTmdbApiKey: (key) => {
+        set({ tmdbApiKey: key });
+        void secureWrite(SECURE_KEYS.tmdbApiKey, key);
+      },
     }),
     {
       name: 'iplayertv-app',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ 
+      // parentalPin/tmdbApiKey are intentionally excluded — they live in SecureStore.
+      partialize: (state) => ({
         activeAccountId: state.activeAccountId,
         hiddenCategories: state.hiddenCategories,
-        parentalPin: state.parentalPin,
-        tmdbApiKey: state.tmdbApiKey,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
+        void (async () => {
+          // One-time migration: pull any pre-existing plaintext values (from the old
+          // AsyncStorage blob) into SecureStore, then load from SecureStore.
+          const legacyPin = state?.parentalPin;
+          const legacyKey = state?.tmdbApiKey;
+
+          let pin = await secureRead(SECURE_KEYS.parentalPin);
+          if (!pin && legacyPin) {
+            pin = legacyPin;
+            await secureWrite(SECURE_KEYS.parentalPin, legacyPin);
+          }
+
+          let apiKey = await secureRead(SECURE_KEYS.tmdbApiKey);
+          if (!apiKey && legacyKey) {
+            apiKey = legacyKey;
+            await secureWrite(SECURE_KEYS.tmdbApiKey, legacyKey);
+          }
+
+          useAppStore.setState({ parentalPin: pin, tmdbApiKey: apiKey });
+          state?.setHasHydrated(true);
+        })();
       },
     }
   )

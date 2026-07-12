@@ -16,6 +16,8 @@ export function SkeletonCard({ index = 0 }: SkeletonCardProps) {
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
+    // Mutating .value is Reanimated's documented API for shared values
+    // eslint-disable-next-line react-hooks/immutability
     opacity.value = withRepeat(
       withTiming(0.7, { duration: 800 }),
       -1,

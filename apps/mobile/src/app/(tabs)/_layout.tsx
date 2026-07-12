@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/lib/theme';
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, SymbolViewProps } from 'expo-symbols';
 
-function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+function TabIcon({ name, focused }: { name: SymbolViewProps['name']; focused: boolean }) {
   return (
     <SymbolView
       name={name}

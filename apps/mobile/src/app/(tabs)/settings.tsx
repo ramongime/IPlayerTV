@@ -80,6 +80,9 @@ export default function SettingsScreen() {
           queryClient.invalidateQueries({ queryKey: ['watched', accountId] });
         },
       },
+    ]);
+  };
+
   const resetHiddenCategories = () => {
     useAppStore.setState((state) => {
       if (!accountId) return state;
@@ -110,7 +113,7 @@ export default function SettingsScreen() {
         { text: t('common.cancel'), style: 'cancel' },
         { 
           text: t('common.save'), 
-          onPress: (pin) => setParentalPin(pin || undefined)
+          onPress: (pin?: string) => setParentalPin(pin || undefined)
         }
       ],
       'secure-text',
@@ -185,7 +188,7 @@ export default function SettingsScreen() {
                 { text: t('common.cancel'), style: 'cancel' },
                 { 
                   text: t('common.save'), 
-                  onPress: (key) => useAppStore.getState().setTmdbApiKey(key || undefined)
+                  onPress: (key?: string) => useAppStore.getState().setTmdbApiKey(key || undefined)
                 }
               ],
               'plain-text',

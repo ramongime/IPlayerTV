@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/lib/theme';
 
@@ -17,7 +16,6 @@ interface HeroBannerProps {
 export function HeroBanner({ stream, tmdbBackdrop, onPlay, onMoreInfo }: HeroBannerProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const bannerImage = tmdbBackdrop || stream.cover || stream.stream_icon;
   const height = Math.min(width * 0.65, 320);
 

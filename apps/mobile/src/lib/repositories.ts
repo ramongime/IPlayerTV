@@ -81,7 +81,7 @@ export class FavoriteRepository implements IFavoriteRepository {
 }
 
 export class WatchedRepository implements IWatchedRepository {
-  async list(accountId: string): Promise<Array<{ contentType: ContentType, streamId: number }>> {
+  async list(accountId: string): Promise<{ contentType: ContentType, streamId: number }[]> {
     const db = await getDatabase();
     return db.getAllAsync<{ contentType: ContentType, streamId: number }>(
       'SELECT contentType, streamId FROM watched WHERE accountId = ?',
