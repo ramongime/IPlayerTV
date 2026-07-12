@@ -109,21 +109,20 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
       for (const stream of streamsToFetch) {
         if (!stream.stream_id) continue;
         const programmes = epgData[String(stream.stream_id)] || (stream.epg_channel_id ? epgData[stream.epg_channel_id] : null) || [];
-        
+
+        // Only show a programme that is actually airing right now — an arbitrary
+        // fallback entry would surface stale titles as "current".
+        // (decodeEpgListing always derives the timestamps when the panel
+        // provides any time info, so checking them is enough.)
         const now = programmes.find(prog => {
           if (prog.start_timestamp && prog.stop_timestamp) {
             return prog.start_timestamp <= currentTime && prog.stop_timestamp > currentTime;
           }
-          if (!prog.start_raw || !prog.end_raw) return false;
-          const pStart = new Date(prog.start_raw.replace(' ', 'T')).getTime() / 1000;
-          const pEnd = new Date(prog.end_raw.replace(' ', 'T')).getTime() / 1000;
-          return pStart <= currentTime && pEnd > currentTime;
+          return false;
         });
 
         if (now?.title) {
           nowPlayingMap[stream.stream_id] = now.title;
-        } else if (programmes.length > 0 && programmes[0].title) {
-          nowPlayingMap[stream.stream_id] = programmes[0].title;
         }
       }
 

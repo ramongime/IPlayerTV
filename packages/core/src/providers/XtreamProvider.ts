@@ -81,7 +81,22 @@ export class XtreamProvider implements IXtreamProvider {
       limit: String(limit)
     });
 
-    return (data.epg_listings ?? []).map((raw) => this.decodeEpgListing(raw));
+    const listings = (data.epg_listings ?? []).map((raw) => this.decodeEpgListing(raw));
+    if (listings.length > 0) return listings;
+
+    // Some panels return an empty short_epg but still expose the full grid via
+    // get_simple_data_table. Fall back to it, keeping only programmes that
+    // haven't ended yet so a stale table doesn't masquerade as a live EPG.
+    try {
+      const table = await this.getEpgTable(account, String(streamId));
+      const nowSec = Math.floor(Date.now() / 1000);
+      const programmes = table[String(streamId)] ?? Object.values(table)[0] ?? [];
+      return programmes
+        .filter((prog) => (prog.stop_timestamp ?? 0) >= nowSec)
+        .slice(0, limit);
+    } catch {
+      return [];
+    }
   }
 
   async getEpgTable(account: Account, streamIds: string): Promise<Record<string, EpgProgramme[]>> {
@@ -94,16 +109,36 @@ export class XtreamProvider implements IXtreamProvider {
 
     const result: Record<string, EpgProgramme[]> = {};
 
-    if (data && Array.isArray(data.epg_listings)) {
-      for (const channel of data.epg_listings) {
-        if (channel && channel.id && Array.isArray(channel.epg_listings)) {
-          result[channel.id] = channel.epg_listings.map((raw: any) => this.decodeEpgListing(raw));
-        }
+    // Panels dedupe streams sharing the same EPG source, so we also expose each
+    // list under its programmes' channel_id — callers can then fall back to the
+    // stream's epg_channel_id when its stream_id is missing from the response.
+    const addListings = (key: string, rawListings: any[]) => {
+      const decoded = rawListings.map((raw: any) => this.decodeEpgListing(raw));
+      result[key] = decoded;
+      const channelId = rawListings[0]?.channel_id;
+      if (typeof channelId === 'string' && channelId && !(channelId in result)) {
+        result[channelId] = decoded;
       }
-    } else if (data && typeof data.epg_listings === 'object') {
+    };
+
+    if (data && Array.isArray(data.epg_listings)) {
+      const first = data.epg_listings[0];
+      if (first && first.id && Array.isArray(first.epg_listings)) {
+        // Array of channels, each with nested listings
+        for (const channel of data.epg_listings) {
+          if (channel && channel.id && Array.isArray(channel.epg_listings)) {
+            addListings(String(channel.id), channel.epg_listings);
+          }
+        }
+      } else if (data.epg_listings.length > 0) {
+        // Flat array of programmes (single-stream request shape)
+        addListings(streamIds, data.epg_listings);
+      }
+    } else if (data && typeof data.epg_listings === 'object' && data.epg_listings !== null) {
+      // Object keyed by stream id (comma-separated request shape)
       for (const [id, listings] of Object.entries(data.epg_listings)) {
-        if (Array.isArray(listings)) {
-          result[id] = listings.map((raw: any) => this.decodeEpgListing(raw));
+        if (Array.isArray(listings) && listings.length > 0) {
+          addListings(id, listings);
         }
       }
     }
@@ -121,27 +156,26 @@ export class XtreamProvider implements IXtreamProvider {
 
       try {
         const epgData = await this.getEpgTable(account, streamIdsStr);
-        const currentTime = Math.floor(new Date().getTime() / 1000);
-        console.log(`[nowPlaying] EPG Data received for batch size ${batch.length}`);
+        const currentTime = Math.floor(Date.now() / 1000);
 
         for (const [streamId, programmes] of Object.entries(epgData)) {
+          // getEpgTable also emits channel_id aliases — only numeric keys are stream ids
+          const idNum = Number(streamId);
+          if (!Number.isFinite(idNum)) continue;
+
+          // Only report a programme that is actually airing right now; falling
+          // back to an arbitrary entry would surface stale titles as "current".
           const now = programmes.find(prog => {
             if (prog.start_timestamp && prog.stop_timestamp) {
               return prog.start_timestamp <= currentTime && prog.stop_timestamp > currentTime;
             }
-            if (!prog.start_raw || !prog.end_raw) return false;
-            const pStart = new Date(prog.start_raw.replace(' ', 'T')).getTime() / 1000;
-            const pEnd = new Date(prog.end_raw.replace(' ', 'T')).getTime() / 1000;
-            return pStart <= currentTime && pEnd > currentTime;
+            return false;
           });
 
           if (now?.title) {
-            result[Number(streamId)] = now.title;
-          } else if (programmes.length > 0 && programmes[0].title) {
-            result[Number(streamId)] = programmes[0].title;
+            result[idNum] = now.title;
           }
         }
-        console.log(`[nowPlaying] Mapped ${Object.keys(result).length} current programs`);
       } catch (err) {
         console.error('Error fetching nowPlaying batch with getEpgTable', err);
       }
