@@ -145,6 +145,7 @@ export function InspectModal({ open, accountId, contentType, stream, onClose, on
               <small>Extensão: {stream.container_extension || 'mp4'}</small>
               <p>{stream.plot || 'Sem descrição detalhada.'}</p>
               <button className="ghost-button" style={{ marginTop: '12px' }} onClick={async () => {
+                if (!accountId) return;
                 const urlResult = await window.xtremeApi.player.resolveUrl({
                   accountId,
                   contentType: 'movie',

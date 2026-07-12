@@ -29,7 +29,14 @@ function createWindow() {
   }
 
   window.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    try {
+      const { protocol } = new URL(url);
+      if (protocol === 'http:' || protocol === 'https:') {
+        shell.openExternal(url);
+      }
+    } catch {
+      // ignore malformed URLs
+    }
     return { action: 'deny' };
   });
 }

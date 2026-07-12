@@ -2,19 +2,20 @@ export type ContentType = 'live' | 'movie' | 'series';
 export type ShelfView = 'catalog' | 'favorites';
 
 export interface AppConfig {
+  externalPlayers: {
+    vlcPath?: string;
+    mpvPath?: string;
+  };
   stream: {
     probeTimeoutMs: number;
-    defaultPlayer: 'internal' | 'vlc' | 'mpv' | 'browser';
-  };
-  ui: {
-    theme: 'dark' | 'light';
-    defaultView: 'grid' | 'list';
   };
   player?: {
     defaultAudioLanguage?: string;
     defaultSubtitleLanguage?: string;
+    splitAudio?: boolean;
   };
   tmdbApiKey?: string;
+  parentalPin?: string;
 }
 
 export interface Account {

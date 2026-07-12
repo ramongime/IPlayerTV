@@ -1,5 +1,15 @@
 import { ipcMain } from 'electron';
 
+/** Only allow the renderer to open real web URLs externally — never file:, javascript:, etc. */
+function isSafeExternalUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function registerWindowIPC() {
   ipcMain.handle('window:togglePip', (event, enable: boolean) => {
     const win = require('electron').BrowserWindow.fromWebContents(event.sender);
@@ -21,6 +31,10 @@ export function registerWindowIPC() {
   });
 
   ipcMain.handle('shell:openExternal', async (_, url: string) => {
+    if (!isSafeExternalUrl(url)) {
+      console.warn('[shell:openExternal] blocked non-http(s) URL:', url);
+      return;
+    }
     const { shell } = await import('electron');
     await shell.openExternal(url);
   });

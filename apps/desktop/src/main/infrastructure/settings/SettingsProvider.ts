@@ -1,22 +1,7 @@
 import Store from 'electron-store';
+import type { AppConfig } from '@iplayertv/core';
 
-interface AppSettings {
-  externalPlayers: {
-    vlcPath?: string;
-    mpvPath?: string;
-  };
-  stream: {
-    probeTimeoutMs: number;
-  };
-  player?: {
-    defaultAudioLanguage?: string;
-    defaultSubtitleLanguage?: string;
-    splitAudio?: boolean;
-  };
-  tmdbApiKey?: string;
-}
-
-const store = new Store<AppSettings>({
+const store = new Store<AppConfig>({
   defaults: {
     externalPlayers: {},
     stream: {
@@ -35,7 +20,7 @@ export class SettingsProvider {
     return store.store;
   }
 
-  update(settings: AppSettings) {
+  update(settings: AppConfig) {
     store.set(settings);
     return store.store;
   }
