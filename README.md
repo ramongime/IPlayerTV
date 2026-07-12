@@ -45,6 +45,7 @@ npm run dist         # build + electron-builder (dmg/nsis/AppImage/deb)
 - EPG "agora" na lista de canais ao vivo
 - Player nativo (**expo-video**: ExoPlayer/AVPlayer) com fallback de URL do core
 - Favoritos e histórico locais (expo-sqlite, mesmo schema do desktop)
+- Dados sensíveis (PIN parental, chave TMDB) no **armazenamento seguro do SO** (Keychain/Keystore via expo-secure-store)
 - Teste via **Expo Go**: `npm run mobile` e escaneie o QR code
 
 ## Build Android local (sem EAS)
@@ -76,9 +77,13 @@ Abra as **Configurações** no app e informe o caminho do executável do player.
 - VLC: `/Applications/VLC.app/Contents/MacOS/VLC`
 - mpv: `/opt/homebrew/bin/mpv`
 
+## TMDB (capas/backdrops)
+
+O app usa a API do TMDB para capas e sinopses. Há uma chave pública de fallback embutida; para usar a sua própria, informe-a nas **Configurações** do app ou defina `EXPO_PUBLIC_TMDB_API_KEY` no build do mobile.
+
 ## Próximos upgrades recomendados
 
 - Build standalone do mobile (EAS + TestFlight)
-- Criptografia da senha salva
+- Criptografia da senha Xtream salva no SQLite (PIN e chave TMDB do mobile já ficam no armazenamento seguro do SO)
 - Download / gravação / catch-up
 - EPG XMLTV mais completo
