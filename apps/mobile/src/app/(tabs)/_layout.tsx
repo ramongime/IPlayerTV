@@ -1,16 +1,13 @@
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { Text } from 'react-native';
 import { colors } from '@/lib/theme';
-import { SymbolView, SymbolViewProps } from 'expo-symbols';
 
-function TabIcon({ name, focused }: { name: SymbolViewProps['name']; focused: boolean }) {
+function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (
-    <SymbolView
-      name={name}
-      size={22}
-      tintColor={focused ? colors.accent : colors.textMuted}
-      weight="medium"
-    />
+    <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
+      {emoji}
+    </Text>
   );
 }
 
@@ -30,35 +27,35 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: t('tabs.live'),
-          tabBarIcon: ({ focused }) => <TabIcon name="tv" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📺" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="movies"
         options={{
           title: t('tabs.movie'),
-          tabBarIcon: ({ focused }) => <TabIcon name="film" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🎬" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="series"
         options={{
           title: t('tabs.series'),
-          tabBarIcon: ({ focused }) => <TabIcon name="play.rectangle.on.rectangle" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🎞️" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
           title: t('common.favorites'),
-          tabBarIcon: ({ focused }) => <TabIcon name="star.fill" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji="⭐" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: t('common.settings'),
-          tabBarIcon: ({ focused }) => <TabIcon name="gearshape" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
         }}
       />
     </Tabs>

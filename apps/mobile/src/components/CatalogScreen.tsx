@@ -1,10 +1,11 @@
 import type { Category, ContentType, StreamItem } from '@iplayertv/core';
 import { FlashList } from '@shopify/flash-list';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -32,9 +33,12 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
   const hasHydrated = useAppStore((s) => s.hasHydrated);
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState('');
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   const {
     categories,
@@ -100,44 +104,40 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
   };
 
   const toggleFavorite = async (item: StreamItem) => {
+    const streamId = idOf(item);
+    if (!streamId) return; // Don't favorite items without a valid ID
     Haptics.selectionAsync();
     await favoritesRepo.toggle({
       accountId: accountId!,
       contentType,
-      streamId: idOf(item),
+      streamId,
       name: item.name,
       icon: item.stream_icon ?? item.cover,
     });
     invalidateLibrary();
+    // Also invalidate the favorites-specific query used by the Favorites tab
+    queryClient.invalidateQueries({ queryKey: ['favorites', accountId] });
   };
 
   const isGridMode = contentType === 'movie' || contentType === 'series';
 
-  const renderCategory = ({ item }: { item: Category }) => (
-    <Pressable
-      onPress={() => setCategoryId(item.category_id)}
-      onLongPress={() => {
-        Alert.alert(t('common.hideCategory'), `${t('common.hide')} ${item.category_name}?`, [
-          { text: t('common.cancel'), style: 'cancel' },
-          { 
-            text: t('common.hide'), 
-            style: 'destructive',
-            onPress: () => {
-              useAppStore.getState().toggleHiddenCategory(accountId!, contentType, item.category_id);
-            }
-          }
-        ]);
-      }}
-      style={[styles.chip, item.category_id === activeCategoryId && styles.chipActive]}
-    >
-      <Text
-        numberOfLines={1}
-        style={[styles.chipText, item.category_id === activeCategoryId && styles.chipTextActive]}
-      >
-        {item.category_name}
-      </Text>
-    </Pressable>
-  );
+  // --- Category Dropdown ---
+  const activeCategoryName = useMemo(() => {
+    if (!activeCategoryId) return t('common.allCategories');
+    return categories.find((c) => c.category_id === activeCategoryId)?.category_name ?? t('common.allCategories');
+  }, [activeCategoryId, categories, t]);
+
+  const filteredCategories = useMemo(() => {
+    const term = categorySearch.trim().toLowerCase();
+    if (!term) return categories;
+    return categories.filter((c) => c.category_name.toLowerCase().includes(term));
+  }, [categories, categorySearch]);
+
+  const selectCategory = (cat: Category | null) => {
+    setCategoryId(cat?.category_id);
+    setCategoryModalVisible(false);
+    setCategorySearch('');
+  };
 
   // Live TV: list view
   const renderListItem = ({ item }: { item: StreamItem }) => {
@@ -216,16 +216,91 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
         style={styles.search}
         autoCorrect={false}
       />
-      <View style={styles.categories}>
-        <FlashList
-          horizontal
-          data={categories}
-          renderItem={renderCategory}
-          keyExtractor={(item) => item.category_id}
-          showsHorizontalScrollIndicator={false}
-          extraData={activeCategoryId}
-        />
-      </View>
+
+      {/* Category Dropdown Trigger */}
+      <Pressable
+        style={styles.categoryDropdown}
+        onPress={() => setCategoryModalVisible(true)}
+      >
+        <Text numberOfLines={1} style={styles.categoryDropdownText}>
+          {activeCategoryName}
+        </Text>
+        <Text style={styles.categoryDropdownArrow}>▾</Text>
+      </Pressable>
+
+      {/* Category Selection Modal */}
+      <Modal
+        visible={categoryModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setCategoryModalVisible(false);
+          setCategorySearch('');
+        }}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => {
+            setCategoryModalVisible(false);
+            setCategorySearch('');
+          }}
+        >
+          <Pressable
+            style={[styles.modalContent, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={styles.modalTitle}>{t('common.selectCategory')}</Text>
+            <TextInput
+              placeholder={t('common.search')}
+              placeholderTextColor={colors.textMuted}
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              style={styles.modalSearch}
+              autoCorrect={false}
+              autoFocus
+            />
+            <FlashList
+              data={filteredCategories}
+              keyExtractor={(item) => item.category_id}
+              ListHeaderComponent={
+                <Pressable
+                  onPress={() => selectCategory(null)}
+                  style={[styles.modalItem, !activeCategoryId && styles.modalItemActive]}
+                >
+                  <Text style={[styles.modalItemText, !activeCategoryId && styles.modalItemTextActive]}>
+                    {t('common.allCategories')}
+                  </Text>
+                </Pressable>
+              }
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => selectCategory(item)}
+                  onLongPress={() => {
+                    Alert.alert(t('common.hideCategory'), `${t('common.hide')} ${item.category_name}?`, [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      {
+                        text: t('common.hide'),
+                        style: 'destructive',
+                        onPress: () => {
+                          useAppStore.getState().toggleHiddenCategory(accountId!, contentType, item.category_id);
+                        },
+                      },
+                    ]);
+                  }}
+                  style={[styles.modalItem, item.category_id === activeCategoryId && styles.modalItemActive]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.modalItemText, item.category_id === activeCategoryId && styles.modalItemTextActive]}
+                  >
+                    {item.category_name}
+                  </Text>
+                </Pressable>
+              )}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {isLoading ? (
         isGridMode ? (
@@ -298,18 +373,77 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  categories: { height: 44, marginBottom: 4 },
-  chip: {
+  // Category Dropdown
+  categoryDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 12,
+    marginBottom: 8,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
     backgroundColor: colors.surface,
-    marginLeft: 8,
-    maxWidth: 220,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  chipActive: { backgroundColor: colors.accent },
-  chipText: { color: colors.textMuted, fontSize: 13 },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
+  categoryDropdownText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  categoryDropdownArrow: {
+    color: colors.textMuted,
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  // Category Modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    maxHeight: '70%',
+    paddingHorizontal: 16,
+    overflow: 'hidden',
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  modalSearch: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceHighlight,
+    color: colors.text,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  modalItemActive: {
+    backgroundColor: colors.accent + '22',
+  },
+  modalItemText: {
+    color: colors.text,
+    fontSize: 14,
+  },
+  modalItemTextActive: {
+    color: colors.accent,
+    fontWeight: '600',
+  },
   // List view styles (Live TV)
   row: {
     flexDirection: 'row',

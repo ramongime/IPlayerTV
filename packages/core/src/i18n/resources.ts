@@ -34,6 +34,11 @@ export const resources = {
         connections: 'Conexões',
         loadingInfo: 'Carregando informações...',
         errorInfo: 'Erro ao buscar informações',
+        success: 'Sucesso',
+        hideCategory: 'Ocultar categoria',
+        hide: 'Ocultar',
+        selectCategory: 'Selecionar categoria',
+        allCategories: 'Todas as categorias',
       },
       emptyState: {
         title: 'Cadastre sua primeira conta',
@@ -52,6 +57,7 @@ export const resources = {
         subtitleTrack: 'Legendas',
         subtitlesOff: 'Desativadas',
         noTracksAvailable: 'Nenhuma faixa disponível',
+        liveTag: 'AO VIVO',
       },
       login: {
         m3uLabel: 'Link M3U (opcional — preenche os campos)',
@@ -68,6 +74,7 @@ export const resources = {
         season: 'Temporada {{season}}',
         title: 'Série',
         noCover: 'Sem Capa',
+        selectSeason: 'Selecionar temporada',
       },
       catchup: {
         title: 'Gravações Disponíveis (Catch-up)',
@@ -109,6 +116,15 @@ export const resources = {
         currentPinWrong: 'PIN atual incorreto',
         removeConfirmText: 'Para remover o controle parental, digite o PIN atual:',
         confirmRemove: 'Remover PIN',
+      },
+      settings: {
+        preferences: 'Preferências',
+        parentalPin: 'Controle Parental',
+        enterNewPin: 'Digite o novo PIN',
+        notSet: 'Não definido',
+        tmdbKey: 'TMDB API Key',
+        resetHiddenCategories: 'Restaurar categorias ocultas',
+        hiddenCategoriesReset: 'Categorias ocultas restauradas',
       },
       categoryList: {
         manage: 'Gerenciar categorias',
@@ -157,6 +173,11 @@ export const resources = {
         connections: 'Connections',
         loadingInfo: 'Loading info...',
         errorInfo: 'Error fetching info',
+        success: 'Success',
+        hideCategory: 'Hide category',
+        hide: 'Hide',
+        selectCategory: 'Select category',
+        allCategories: 'All categories',
       },
       emptyState: {
         title: 'Add your first account',
@@ -175,6 +196,7 @@ export const resources = {
         subtitleTrack: 'Subtitles',
         subtitlesOff: 'Off',
         noTracksAvailable: 'No tracks available',
+        liveTag: 'LIVE',
       },
       login: {
         m3uLabel: 'M3U Link (optional — auto-fills the fields)',
@@ -191,6 +213,7 @@ export const resources = {
         season: 'Season {{season}}',
         title: 'Series',
         noCover: 'No Cover',
+        selectSeason: 'Select season',
       },
       catchup: {
         title: 'Available Recordings (Catch-up)',
@@ -232,6 +255,15 @@ export const resources = {
         currentPinWrong: 'Current PIN is incorrect',
         removeConfirmText: 'To remove parental control, enter the current PIN:',
         confirmRemove: 'Remove PIN',
+      },
+      settings: {
+        preferences: 'Preferences',
+        parentalPin: 'Parental Control',
+        enterNewPin: 'Enter new PIN',
+        notSet: 'Not set',
+        tmdbKey: 'TMDB API Key',
+        resetHiddenCategories: 'Reset hidden categories',
+        hiddenCategoriesReset: 'Hidden categories restored',
       },
       categoryList: {
         manage: 'Manage categories',
