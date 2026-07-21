@@ -1,13 +1,29 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from 'react-i18next';
+import { PinModal } from '../auth/PinModal';
+
+import type { Account, Category } from '@iplayertv/core';
 
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
+  accounts?: Account[];
+  activeAccountId?: string;
+  onAccountChange?: (id: string) => void;
+  onCreateAccount?: () => void;
+  onEditAccount?: (account: Account) => void;
+  onRemoveAccount?: (id: string) => void;
+  categories?: Category[];
+  hiddenCategories?: Set<string>;
+  onToggleHidden?: (categoryId: string) => void;
 }
 
-export function SettingsModal({ open, onClose }: SettingsModalProps) {
+export function SettingsModal({ 
+  open, onClose, accounts, activeAccountId, 
+  onAccountChange, onCreateAccount, onEditAccount, onRemoveAccount,
+  categories, hiddenCategories, onToggleHidden
+}: SettingsModalProps) {
   const { t } = useTranslation();
   const [settings, setSettings] = useState({
     externalPlayers: { vlcPath: '', mpvPath: '' },
@@ -27,6 +43,9 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
   const [pinError, setPinError] = useState('');
   const hasPinConfigured = !!settings.parentalPin;
 
+  const [categoriesUnlocked, setCategoriesUnlocked] = useState(false);
+  const [showCategoryPin, setShowCategoryPin] = useState(false);
+
   useEffect(() => {
     if (open) {
       window.xtremeApi.settings.get().then((data: any) => {
@@ -36,6 +55,8 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         });
       });
       resetPinState();
+      setCategoriesUnlocked(false);
+      setShowCategoryPin(false);
     }
   }, [open]);
 
@@ -93,13 +114,150 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
 
   return (
     <div className="modal-backdrop">
-      <div className="modal" style={{ maxWidth: '560px' }}>
-        <div className="modal-header-row">
+      <div className="modal" style={{ maxWidth: '560px', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 64px)' }}>
+        <div className="modal-header-row" style={{ flexShrink: 0 }}>
           <h2 style={{ margin: 0 }}>{t('settingsModal.title')}</h2>
           <button className="ghost-button" onClick={onClose} style={{ padding: '6px 12px', fontSize: '18px' }}>✕</button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '8px', overflowY: 'auto', paddingRight: '8px', flex: 1 }}>
+          {/* Accounts Management Section */}
+          {accounts && (
+            <div style={{
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '14px',
+              padding: '20px',
+              background: 'rgba(255,255,255,0.02)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600 }}>{t('common.accounts')}</span>
+                <button className="primary-button" onClick={onCreateAccount} style={{ padding: '6px 12px', fontSize: '13px' }}>
+                  {t('common.newAccount')}
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {accounts.map((account) => (
+                  <div
+                    key={account.id}
+                    className={`account-card ${activeAccountId === account.id ? 'active' : ''}`}
+                    onClick={() => onAccountChange?.(account.id)}
+                    style={{ 
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '12px 16px',
+                      background: 'rgba(255,255,255,0.03)',
+                      borderRadius: '12px',
+                      border: activeAccountId === account.id ? '1px solid rgba(76, 201, 240, 0.4)' : '1px solid transparent'
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                      <strong style={{ fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{account.name}</strong>
+                      <small style={{ fontSize: '12px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{account.server}</small>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                      <button
+                        className="ghost-button"
+                        title={t('common.editAccount')}
+                        onClick={(e) => { e.stopPropagation(); onEditAccount?.(account); }}
+                        style={{ padding: '6px 10px', fontSize: '14px' }}
+                      >
+                        ✏
+                      </button>
+                      <button
+                        className="ghost-button danger"
+                        title={t('common.removeAccount')}
+                        onClick={(e) => { e.stopPropagation(); onRemoveAccount?.(account.id); }}
+                        style={{ padding: '6px 10px', fontSize: '14px' }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {accounts.length === 0 && (
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma conta configurada.</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Hidden Categories Section */}
+          {categories && hiddenCategories && (
+            <div style={{
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '14px',
+              padding: '20px',
+              background: 'rgba(255,255,255,0.02)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600 }}>{t('categoryList.manage', 'Ocultar Categorias')}</span>
+                <span style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{t('categoryList.clickToHide', 'Clique para ocultar ou exibir categorias na tela inicial.')}</span>
+              </div>
+              
+              {hasPinConfigured && !categoriesUnlocked ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span style={{ fontSize: '32px' }}>🔒</span>
+                  <span style={{ fontSize: '14px', color: '#94a3b8' }}>Conteúdo protegido pelo PIN Parental</span>
+                  <button className="primary-button" onClick={() => setShowCategoryPin(true)} style={{ padding: '8px 16px' }}>
+                    Desbloquear
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '250px', overflowY: 'auto', paddingRight: '8px' }}>
+                  {categories.map((cat) => {
+                    const isHidden = hiddenCategories.has(cat.category_id);
+                    return (
+                      <div
+                        key={cat.category_id}
+                        onClick={() => onToggleHidden?.(cat.category_id)}
+                        style={{
+                          padding: '8px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          background: isHidden ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.03)',
+                          transition: 'background 0.2s ease'
+                        }}
+                      >
+                        <span style={{ 
+                          fontSize: '13px', 
+                          color: isHidden ? '#64748b' : '#e2e8f0', 
+                          textDecoration: isHidden ? 'line-through' : 'none',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {cat.category_name}
+                        </span>
+                        <span style={{ fontSize: '16px', opacity: isHidden ? 0.4 : 1 }}>
+                          {isHidden ? '🚫' : '👁'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              <PinModal 
+                open={showCategoryPin} 
+                correctPin={settings.parentalPin || ''} 
+                onSuccess={() => { setShowCategoryPin(false); setCategoriesUnlocked(true); }}
+                onCancel={() => setShowCategoryPin(false)}
+              />
+            </div>
+          )}
+
           {/* Settings Fields Card */}
           <div style={{
             border: '1px solid rgba(255,255,255,0.08)',
@@ -477,7 +635,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
           </div>
         </div>
 
-        <div className="modal-actions">
+        <div className="modal-actions" style={{ flexShrink: 0, marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <button className="ghost-button" onClick={onClose}>{t('common.close')}</button>
           <button
             className="primary-button"

@@ -55,6 +55,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
     accountId,
     contentType,
     categoryId,
+    isSearching: !!search.trim(),
   });
 
   const filtered = useMemo(() => {
@@ -179,7 +180,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
         onToggleFavorite={() => toggleFavorite(item)}
       />
     );
-  }, [favoriteIds, nowPlaying, contentType, accountId]);
+  }, [favoriteIds, nowPlaying, contentType, accountId, idOf, toggleFavorite, openItem]);
 
   const ListHeader = useMemo(() => {
     if (!featuredStream || isGridMode === false) return null;
@@ -200,7 +201,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
         }}
       />
     );
-  }, [featuredStream, isGridMode, contentType]);
+  }, [featuredStream, isGridMode, contentType, router, tmdbQuery.data?.backdropPath, openItem]);
 
   if (hasHydrated && !accountId) {
     return <Redirect href="/login" />;
@@ -233,6 +234,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
         visible={categoryModalVisible}
         transparent
         animationType="fade"
+        supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
         onRequestClose={() => {
           setCategoryModalVisible(false);
           setCategorySearch('');
@@ -259,9 +261,11 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
               autoCorrect={false}
               autoFocus
             />
-            <FlashList
-              data={filteredCategories}
-              keyExtractor={(item) => item.category_id}
+            <View style={{ flex: 1, minHeight: 300, width: '100%' }}>
+              <FlashList
+                data={filteredCategories}
+
+                keyExtractor={(item) => item.category_id}
               ListHeaderComponent={
                 <Pressable
                   onPress={() => selectCategory(null)}
@@ -296,8 +300,9 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
                     {item.category_name}
                   </Text>
                 </Pressable>
-              )}
-            />
+                )}
+              />
+            </View>
           </Pressable>
         </Pressable>
       </Modal>

@@ -94,7 +94,7 @@ export const resources = {
         tmdbKey: 'TMDB API Key',
         defaultAudio: 'Idioma padrão de Áudio (ex: pt, en)',
         defaultSubtitle: 'Idioma padrão de Legenda (ex: pt, en)',
-        enableAllCategory: 'Habilitar a categoria TODOS nas Séries e Filmes',
+        enableAllCategory: 'Habilitar a categoria TODOS (Ao Vivo, Filmes e Séries)',
         splitAudio: 'Áudio Split L/R no Multi-View (esquerdo → fone esquerdo, direito → fone direito)',
         backupTitle: 'Backup de Configurações',
         backupDesc: 'Exporte ou restaure contas e configurações em um arquivo JSON',

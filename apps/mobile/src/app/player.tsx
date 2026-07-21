@@ -118,6 +118,10 @@ export default function PlayerScreen() {
         player.play();
       })
       .catch(() => {});
+    
+    return () => {
+      try { player.pause(); } catch {}
+    };
   }, [urlQuery.data, player]);
 
 
@@ -159,7 +163,10 @@ export default function PlayerScreen() {
           {/* Top bar: close button + title */}
           <View style={[styles.topBar, { top: isPortrait ? insets.top + 8 : 8 }]}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => {
+                try { player.pause(); } catch {}
+                router.back();
+              }}
               style={styles.closeButton}
               hitSlop={12}
             >

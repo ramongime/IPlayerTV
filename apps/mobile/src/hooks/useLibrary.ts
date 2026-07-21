@@ -9,6 +9,7 @@ interface UseLibraryParams {
   contentType: ContentType;
   categoryId?: string;
   tmdbApiKey?: string;
+  isSearching?: boolean;
 }
 
 export const libraryKeys = {
@@ -21,8 +22,9 @@ export const libraryKeys = {
     [...libraryKeys.all, 'now-playing', accountId, streamIds] as const,
 };
 
-export function useLibrary({ accountId, contentType, categoryId, tmdbApiKey }: UseLibraryParams) {
+export function useLibrary({ accountId, contentType, categoryId, tmdbApiKey, isSearching }: UseLibraryParams) {
   const queryClient = useQueryClient();
+  const enableSearchAll = useAppStore((s) => s.enableSearchAll);
 
   // Base data: categories + favorites + watched
   const baseQuery = useQuery({
@@ -49,12 +51,17 @@ export function useLibrary({ accountId, contentType, categoryId, tmdbApiKey }: U
   const watched = baseQuery.data?.watched ?? [];
 
   // Resolve active category — fallback to first if not set
-  const activeCategoryId = categoryId ?? categories[0]?.category_id;
+  let activeCategoryId: string | undefined = categoryId ?? categories[0]?.category_id;
+  
+  // If global search is enabled and user is searching, fetch all streams (undefined category)
+  if (enableSearchAll && isSearching) {
+    activeCategoryId = undefined;
+  }
 
-  // Streams for the selected category
+  // Streams for the selected category (or all if activeCategoryId is undefined)
   const streamsQuery = useQuery({
     queryKey: libraryKeys.streams(accountId, contentType, activeCategoryId),
-    enabled: !!accountId && !!activeCategoryId,
+    enabled: !!accountId && (activeCategoryId !== undefined || (enableSearchAll && isSearching)),
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const account = await resolveAccount(accountId!);
@@ -64,9 +71,9 @@ export function useLibrary({ accountId, contentType, categoryId, tmdbApiKey }: U
 
   const streams = streamsQuery.data ?? [];
 
-  // Now Playing EPG for live channels (first 50)
+  // Now Playing EPG for live channels (first 150 to match desktop)
   const liveStreamIds = contentType === 'live'
-    ? streams.slice(0, 50).map((s) => s.stream_id!).filter(Boolean)
+    ? streams.slice(0, 150).map((s) => s.stream_id!).filter(Boolean)
     : [];
 
   const nowPlayingQuery = useQuery({

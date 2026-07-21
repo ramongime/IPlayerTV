@@ -9,15 +9,15 @@ export class TmdbClient {
 
   constructor(private fetchFn: FetchLike) {}
 
-  async fetchInfo(name: string, type: 'movie' | 'series', apiKey: string): Promise<TmdbInfo | undefined> {
-    if (!apiKey) return undefined;
+  async fetchInfo(name: string, type: 'movie' | 'series', apiKey: string): Promise<TmdbInfo | null> {
+    if (!apiKey) return null;
 
     // Clean up the name for better search results (remove years in parenthesis, etc.)
     const cleanName = name.replace(/\(\d{4}\)/g, '').trim();
     const cacheKey = `${type}:${cleanName}`;
 
     if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
+      return this.cache.get(cacheKey) || null;
     }
 
     try {
@@ -26,8 +26,10 @@ export class TmdbClient {
 
       const response = await this.fetchFn(url);
       if (!response.ok) {
-        console.error(`TMDB API Error: ${response.statusText}`);
-        return undefined;
+        if (response.status !== 401) {
+          console.warn(`TMDB API Error: ${response.statusText} (${response.status})`);
+        }
+        return null;
       }
 
       const data: any = await response.json();
@@ -47,10 +49,10 @@ export class TmdbClient {
         return info;
       }
 
-      return undefined;
+      return null;
     } catch (error) {
       console.error('Failed to fetch TMDB info:', error);
-      return undefined;
+      return null;
     }
   }
 }

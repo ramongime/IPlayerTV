@@ -14,6 +14,10 @@ interface AppState {
   setParentalPin: (pin?: string) => void;
   tmdbApiKey?: string;
   setTmdbApiKey: (key?: string) => void;
+  enableSearchAll: boolean;
+  setEnableSearchAll: (v: boolean) => void;
+  playerPreferences: { defaultAudioLanguage?: string, defaultSubtitleLanguage?: string };
+  setPlayerPreferences: (prefs: { defaultAudioLanguage?: string, defaultSubtitleLanguage?: string }) => void;
 }
 
 // Sensitive values live in the OS keychain/keystore, not in plaintext AsyncStorage
@@ -64,6 +68,10 @@ export const useAppStore = create<AppState>()(
         set({ tmdbApiKey: key });
         void secureWrite(SECURE_KEYS.tmdbApiKey, key);
       },
+      enableSearchAll: false,
+      setEnableSearchAll: (v) => set({ enableSearchAll: v }),
+      playerPreferences: {},
+      setPlayerPreferences: (prefs) => set({ playerPreferences: prefs }),
     }),
     {
       name: 'iplayertv-app',
@@ -72,6 +80,8 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         activeAccountId: state.activeAccountId,
         hiddenCategories: state.hiddenCategories,
+        enableSearchAll: state.enableSearchAll,
+        playerPreferences: state.playerPreferences,
       }),
       onRehydrateStorage: () => (state) => {
         void (async () => {

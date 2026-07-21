@@ -11,6 +11,7 @@ import { Sidebar } from '@/features/auth/Sidebar';
 import { StreamGrid } from '@/features/catalog/StreamGrid';
 import { TopBar } from '@/features/catalog/TopBar';
 import { HeroBanner } from '@/features/catalog/HeroBanner';
+import { GlobalNav } from '@/components/GlobalNav';
 import type { Account, ShelfView, StreamItem } from '@iplayertv/core';
 import { useAppStore } from '@/store/useAppStore';
 import { useLibrary } from '@/features/catalog/hooks/useLibrary';
@@ -89,7 +90,6 @@ export function DashboardPage() {
   const loadAccounts = async () => {
     const result = await window.xtremeApi.accounts.list();
     setAccounts(result);
-    if (result.length > 0) setIsSidebarOpen(false);
   };
 
   const loadSettings = async () => {
@@ -128,19 +128,31 @@ export function DashboardPage() {
 
   return (
     <div className={`app-shell ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`}>
-      {isSidebarOpen && (
-        <Sidebar
-          accounts={accounts}
-          activeAccountId={activeAccountId}
-          onAccountChange={setActiveAccountId}
-          onCreateAccount={() => { setEditingAccount(undefined); setShowAccountModal(true); }}
-          onEditAccount={(account) => { setEditingAccount(account); setShowAccountModal(true); }}
-          onRemoveAccount={async (id) => {
-            await window.xtremeApi.accounts.remove(id);
-            await loadAccounts();
-          }}
-        />
-      )}
+      <GlobalNav 
+        activeTab={activeTab} 
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setActiveCategoryId('all');
+          setShelfView('catalog');
+        }}
+        onOpenSettings={() => setShowSettingsModal(true)} 
+      />
+
+      <aside className="sidebar" style={{ display: (isSidebarOpen && activeAccountId && shelfView === 'catalog') ? 'flex' : 'none', flexDirection: 'column' }}>
+        {activeAccountId && shelfView === 'catalog' && (
+          <div style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <CategoryList 
+              categories={categories} 
+              activeCategoryId={activeCategoryId} 
+              onSelect={setActiveCategoryId} 
+              enableSearchAll={enableSearchAll} 
+              hiddenCategories={hiddenCategories} 
+              onToggleHidden={toggleHiddenCategory} 
+              parentalPin={parentalPin} 
+            />
+          </div>
+        )}
+      </aside>
 
       <main className="content">
         <TopBar
@@ -185,44 +197,33 @@ export function DashboardPage() {
                 />
               )}
 
-              {shelfView === 'catalog' && (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
-                  <CategoryList 
-                    categories={categories} 
-                    activeCategoryId={activeCategoryId} 
-                    onSelect={setActiveCategoryId} 
-                    enableSearchAll={enableSearchAll} 
-                    hiddenCategories={hiddenCategories} 
-                    onToggleHidden={toggleHiddenCategory} 
-                    parentalPin={parentalPin} 
-                  />
-                  {activeTab === 'live' && (
-                    <div className="view-toggle-group">
-                      <button 
-                        className={`ghost-button view-toggle-button ${viewMode === 'cards' ? 'view-toggle-button--active' : ''}`}
-                        onClick={() => setViewMode('cards')}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="3" width="7" height="7"></rect>
-                          <rect x="14" y="3" width="7" height="7"></rect>
-                          <rect x="14" y="14" width="7" height="7"></rect>
-                          <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        {t('epg.cardView')}
-                      </button>
-                      <button 
-                        className={`ghost-button view-toggle-button ${viewMode === 'epg' ? 'view-toggle-button--active' : ''}`}
-                        onClick={() => setViewMode('epg')}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="3" y1="12" x2="21" y2="12"></line>
-                          <line x1="3" y1="6" x2="21" y2="6"></line>
-                          <line x1="3" y1="18" x2="21" y2="18"></line>
-                        </svg>
-                        {t('epg.gridView')}
-                      </button>
-                    </div>
-                  )}
+              {shelfView === 'catalog' && activeTab === 'live' && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                  <div className="view-toggle-group">
+                    <button 
+                      className={`ghost-button view-toggle-button ${viewMode === 'cards' ? 'view-toggle-button--active' : ''}`}
+                      onClick={() => setViewMode('cards')}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                      </svg>
+                      {t('epg.cardView')}
+                    </button>
+                    <button 
+                      className={`ghost-button view-toggle-button ${viewMode === 'epg' ? 'view-toggle-button--active' : ''}`}
+                      onClick={() => setViewMode('epg')}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                      </svg>
+                      {t('epg.gridView')}
+                    </button>
+                  </div>
                 </div>
               )}
               
@@ -295,7 +296,22 @@ export function DashboardPage() {
         onSave={async (payload) => { await window.xtremeApi.accounts.create(payload); await loadAccounts(); setLastPlayMessage(undefined); }}
         onUpdate={async (id, payload) => { await window.xtremeApi.accounts.update(id, payload); await loadAccounts(); setLastPlayMessage(undefined); }}
       />
-      <SettingsModal open={showSettingsModal} onClose={() => { setShowSettingsModal(false); loadSettings().catch(() => {}); }} />
+      <SettingsModal 
+        open={showSettingsModal} 
+        onClose={() => { setShowSettingsModal(false); loadSettings().catch(() => {}); }}
+        accounts={accounts}
+        activeAccountId={activeAccountId}
+        onAccountChange={setActiveAccountId}
+        onCreateAccount={() => { setEditingAccount(undefined); setShowAccountModal(true); }}
+        onEditAccount={(account) => { setEditingAccount(account); setShowAccountModal(true); }}
+        onRemoveAccount={async (id) => {
+          await window.xtremeApi.accounts.remove(id);
+          await loadAccounts();
+        }}
+        categories={categories}
+        hiddenCategories={hiddenCategories}
+        onToggleHidden={toggleHiddenCategory}
+      />
       <InspectModal
         open={showInspectModal}
         accountId={activeAccountId}

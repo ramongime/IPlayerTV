@@ -1,4 +1,5 @@
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, PanResponder } from 'react-native';
+import { useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
@@ -24,7 +25,8 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   // Fetch TMDB
   const tmdbQuery = useQuery({
@@ -46,6 +48,17 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
       return xtream.shortEpg(account, item!.stream_id!, 15);
     },
   });
+
+  const [panResponder] = useState(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderRelease: (e, gestureState) => {
+        if (gestureState.dy > 50) {
+          onClose(); // Close if swiped down
+        }
+      },
+    })
+  );
 
   if (!item) return null;
 
@@ -119,35 +132,75 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
     </View>
   );
 
+  // Dynamic styles based on orientation
+  const backdropStyle = isLandscape
+    ? [styles.backdrop, { justifyContent: 'center' as const, alignItems: 'center' as const }]
+    : styles.backdrop;
+
+  const sheetStyle = isLandscape
+    ? [styles.sheet, {
+        borderRadius: 20,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        maxHeight: height - 32,
+        maxWidth: Math.min(width * 0.85, 700),
+        width: Math.min(width * 0.85, 700),
+      }]
+    : [styles.sheet, {
+        maxHeight: height * 0.9,
+        paddingBottom: insets.bottom + 20,
+      }];
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={[styles.sheet, { maxHeight: height * 0.9, paddingBottom: insets.bottom + 20 }]} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.dragHandle} />
-          
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+      onRequestClose={onClose}
+    >
+      <Pressable style={backdropStyle} onPress={onClose}>
+        <Pressable style={sheetStyle} onPress={(e) => e.stopPropagation()}>
+          <View {...panResponder.panHandlers} style={{ paddingVertical: 12, width: '100%', alignItems: 'center' }}>
+            <View style={[styles.dragHandle, { marginTop: 0, marginBottom: 0 }]} />
+          </View>
+
           <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-            {backdrop ? (
+            {backdrop && !isLandscape ? (
               <View style={styles.backdropContainer}>
                 <Image source={{ uri: backdrop }} style={StyleSheet.absoluteFill} contentFit="cover" />
                 <LinearGradient colors={['transparent', colors.surface]} style={StyleSheet.absoluteFill} />
               </View>
             ) : null}
 
-            <View style={[styles.header, { marginTop: backdrop ? -80 : 0 }]}>
-              <Image source={{ uri: cover }} style={styles.poster} contentFit="cover" />
+            <View style={[styles.header, { marginTop: backdrop && !isLandscape ? -80 : 0 }]}>
+              <Image
+                source={{ uri: cover }}
+                style={[
+                  styles.poster,
+                  isLandscape 
+                    ? { width: 64, height: 64 } 
+                    : { width: 60, height: 60 },
+                ]}
+                contentFit="contain"
+              />
               <View style={styles.headerInfo}>
                 <Text style={styles.title} numberOfLines={3}>{item.name}</Text>
                 <View style={styles.metaRow}>
                   {rating ? <Text style={styles.metaText}>⭐ {rating}</Text> : null}
                   {releaseYear ? <Text style={styles.metaText}>📅 {releaseYear}</Text> : null}
-                  {item.container_extension ? <Text style={styles.metaBadge}>{item.container_extension.toUpperCase()}</Text> : null}
+                  {item.container_extension ? (
+                    <Text style={styles.metaBadge}>{item.container_extension.toUpperCase()}</Text>
+                  ) : null}
                 </View>
               </View>
             </View>
 
             <View style={styles.content}>
               <Pressable style={styles.playBtn} onPress={handlePlay}>
-                <Text style={styles.playBtnText}>▶ {contentType === 'series' ? t('common.moreInfo') : t('common.playNow')}</Text>
+                <Text style={styles.playBtnText}>
+                  ▶ {contentType === 'series' ? t('common.moreInfo') : t('common.playNow')}
+                </Text>
               </Pressable>
 
               {plot ? <Text style={styles.plot}>{plot}</Text> : null}
@@ -194,16 +247,19 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   poster: {
-    width: 100,
+    width: 60,
     aspectRatio: 2 / 3,
     borderRadius: 8,
+  },
+  posterSmall: {
+    width: 64,
+    aspectRatio: 1,
+    borderRadius: 8,
     backgroundColor: colors.surfaceHighlight,
-    borderWidth: 2,
-    borderColor: colors.surface,
   },
   headerInfo: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     paddingBottom: 4,
   },
   title: {

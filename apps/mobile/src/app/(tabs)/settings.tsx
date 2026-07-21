@@ -2,21 +2,27 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { accountsRepo, watchedRepo } from '@/lib/repositories';
 import { resolveAccount, xtream } from '@/lib/services';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/theme';
 import { PinModal } from '@/components/PinModal';
+import { ManageCategoriesModal } from '@/components/ManageCategoriesModal';
 
 export default function SettingsScreen() {
   const accountId = useAppStore((s) => s.activeAccountId);
   const setActiveAccountId = useAppStore((s) => s.setActiveAccountId);
   const parentalPin = useAppStore((s) => s.parentalPin);
   const setParentalPin = useAppStore((s) => s.setParentalPin);
+  const enableSearchAll = useAppStore((s) => s.enableSearchAll);
+  const setEnableSearchAll = useAppStore((s) => s.setEnableSearchAll);
+  const playerPreferences = useAppStore((s) => s.playerPreferences);
+  const setPlayerPreferences = useAppStore((s) => s.setPlayerPreferences);
   
   const [showPin, setShowPin] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -83,29 +89,44 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const resetHiddenCategories = () => {
-    useAppStore.setState((state) => {
-      if (!accountId) return state;
-      const newHidden = { ...state.hiddenCategories };
-      Object.keys(newHidden).forEach(key => {
-        if (key.startsWith(`${accountId}:`)) {
-          delete newHidden[key];
-        }
-      });
-      return { hiddenCategories: newHidden };
-    });
-    Alert.alert(t('common.success'), t('settings.hiddenCategoriesReset'));
-  };
+
 
   const handleResetRequest = () => {
     if (parentalPin) {
       setShowPin(true);
     } else {
-      resetHiddenCategories();
+      setShowManageModal(true);
     }
   };
 
   const handleSetPin = () => {
+    if (parentalPin) {
+      Alert.prompt(
+        t('settings.parentalPin'),
+        t('parental.enterPin', 'Digite o PIN atual para alterar:'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { 
+            text: t('common.confirm', 'Confirmar'), 
+            onPress: (oldPin?: string) => {
+              if (oldPin === parentalPin) {
+                promptNewPin();
+              } else {
+                Alert.alert(t('common.error'), t('parental.incorrectPin', 'PIN Incorreto'));
+              }
+            }
+          }
+        ],
+        'secure-text',
+        '',
+        'number-pad'
+      );
+    } else {
+      promptNewPin();
+    }
+  };
+
+  const promptNewPin = () => {
     Alert.prompt(
       t('settings.parentalPin'),
       t('settings.enterNewPin'),
@@ -117,7 +138,7 @@ export default function SettingsScreen() {
         }
       ],
       'secure-text',
-      parentalPin || '',
+      '',
       'number-pad'
     );
   };
@@ -203,8 +224,59 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
+        <View style={[styles.infoRow, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, marginTop: 4 }]}>
+          <Text style={styles.muted}>{t('settingsModal.defaultAudio', 'Áudio Padrão')}</Text>
+          <Pressable onPress={() => {
+            Alert.prompt(
+              t('settingsModal.defaultAudio', 'Áudio Padrão'),
+              t('settingsModal.defaultAudioDesc', 'Ex: pt, por, eng'),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { 
+                  text: t('common.save'), 
+                  onPress: (lang?: string) => setPlayerPreferences({ ...playerPreferences, defaultAudioLanguage: lang || undefined })
+                }
+              ],
+              'plain-text',
+              playerPreferences.defaultAudioLanguage || ''
+            );
+          }}>
+            <Text style={styles.infoValue}>{playerPreferences.defaultAudioLanguage || t('settings.notSet')}</Text>
+          </Pressable>
+        </View>
+
+        <View style={[styles.infoRow, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, marginTop: 4 }]}>
+          <Text style={styles.muted}>{t('settingsModal.defaultSubtitle', 'Legenda Padrão')}</Text>
+          <Pressable onPress={() => {
+            Alert.prompt(
+              t('settingsModal.defaultSubtitle', 'Legenda Padrão'),
+              t('settingsModal.defaultSubtitleDesc', 'Ex: pt, por, eng'),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { 
+                  text: t('common.save'), 
+                  onPress: (lang?: string) => setPlayerPreferences({ ...playerPreferences, defaultSubtitleLanguage: lang || undefined })
+                }
+              ],
+              'plain-text',
+              playerPreferences.defaultSubtitleLanguage || ''
+            );
+          }}>
+            <Text style={styles.infoValue}>{playerPreferences.defaultSubtitleLanguage || t('settings.notSet')}</Text>
+          </Pressable>
+        </View>
+
+        <View style={[styles.infoRow, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, marginTop: 4, alignItems: 'center' }]}>
+          <Text style={[styles.muted, { flex: 1, marginRight: 12 }]}>{t('settingsModal.enableAllCategory', 'Pesquisa Global (Todas Categorias)')}</Text>
+          <Switch 
+            value={enableSearchAll}
+            onValueChange={setEnableSearchAll}
+            trackColor={{ false: colors.border, true: colors.accent }}
+          />
+        </View>
+
         <Pressable onPress={handleResetRequest} style={[styles.button, { marginTop: 16 }]}>
-          <Text style={styles.buttonText}>{t('settings.resetHiddenCategories')}</Text>
+          <Text style={styles.buttonText}>{t('settings.manageCategories', 'Gerenciar Categorias')}</Text>
         </Pressable>
       </View>
       
@@ -213,10 +285,18 @@ export default function SettingsScreen() {
         correctPin={parentalPin || ''}
         onSuccess={() => {
           setShowPin(false);
-          resetHiddenCategories();
+          setShowManageModal(true);
         }}
         onCancel={() => setShowPin(false)}
       />
+
+      {accountId && (
+        <ManageCategoriesModal 
+          visible={showManageModal}
+          onClose={() => setShowManageModal(false)}
+          accountId={accountId}
+        />
+      )}
     </ScrollView>
   );
 }
