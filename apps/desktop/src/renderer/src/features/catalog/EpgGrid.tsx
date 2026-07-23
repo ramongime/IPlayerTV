@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { StreamItem, EpgProgramme } from '@iplayertv/core';
 import { useTranslation } from 'react-i18next';
+import { Virtuoso } from 'react-virtuoso';
 
 interface EpgGridProps {
   accountId: string;
@@ -15,9 +16,7 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // We only fetch EPG for the current visible streams.
-  // Limiting to 150 channels to avoid URI Too Long error on IPTV servers
-  const streamIds = streams.slice(0, 150).map(s => s.stream_id).filter(Boolean).join(',');
+  const streamIds = useMemo(() => streams.slice(0, 150).map(s => s.stream_id).filter(Boolean).join(','), [streams]);
 
   const epgQuery = useQuery({
     queryKey: ['epg-table', accountId, streamIds],
@@ -31,21 +30,22 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
 
   const epgData = epgQuery.data || {};
 
-  // Update current time line every minute
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
 
   const PIXELS_PER_MINUTE = 5;
-  const startOfDay = new Date(currentTime);
-  startOfDay.setHours(0, 0, 0, 0); // Start of the current day in local time
+  const startOfDay = useMemo(() => {
+    const d = new Date(currentTime);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [currentTime.getDate()]);
+  
   const currentMinutesFromStart = Math.floor((currentTime.getTime() - startOfDay.getTime()) / 60000);
 
-  // Auto scroll to current time on load
   useEffect(() => {
     if (containerRef.current) {
-      // scroll to current time minus 30 mins to show context
       const scrollPos = (currentMinutesFromStart - 30) * PIXELS_PER_MINUTE;
       containerRef.current.scrollLeft = Math.max(0, scrollPos);
     }
@@ -70,7 +70,7 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
     return headers;
   };
 
-  const calculateProgramBounds = (prog: EpgProgramme) => {
+  const calculateProgramBounds = useCallback((prog: EpgProgramme) => {
     if (!prog.start_raw || !prog.end_raw) return null;
     const pStart = new Date(prog.start_raw.replace(' ', 'T')).getTime();
     const pEnd = new Date(prog.end_raw.replace(' ', 'T')).getTime();
@@ -80,7 +80,6 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
     const endMins = (pEnd - startOfDay.getTime()) / 60000;
     const durationMins = endMins - startMins;
 
-    // Filter out programs completely outside today's view (optional, but good for UI)
     if (endMins < 0 || startMins > 24 * 60) return null;
 
     return {
@@ -90,7 +89,7 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
       isNow: pStart <= currentTime.getTime() && pEnd > currentTime.getTime(),
       isPast: pEnd <= currentTime.getTime()
     };
-  };
+  }, [startOfDay, currentTime]);
 
   const handleProgramClick = (streamId: number, title: string, prog: EpgProgramme, bounds: any) => {
     if (bounds.isNow) {
@@ -117,24 +116,32 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
         </div>
       </div>
 
-      <div className="epg-body" onScroll={(e) => {
-        if (containerRef.current) {
-          containerRef.current.scrollLeft = e.currentTarget.scrollLeft;
-        }
-      }}>
-        <div style={{ position: 'relative', minWidth: 'max-content' }}>
-          {/* Now Playing Line */}
-          <div
-            className="epg-now-line"
-            style={{ left: `${currentMinutesFromStart * PIXELS_PER_MINUTE + 120}px` }}
-          />
-
-          {streams.map((stream) => {
+      <div style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
+        <Virtuoso
+          style={{ height: '100%' }}
+          data={streams}
+          onScroll={(e) => {
+            if (containerRef.current) {
+              containerRef.current.scrollLeft = (e.target as HTMLDivElement).scrollLeft;
+            }
+          }}
+          components={{
+            List: React.forwardRef((props, ref) => (
+              <div {...props} ref={ref} style={{ ...props.style, minWidth: 'max-content', position: 'relative' }}>
+                <div
+                  className="epg-now-line"
+                  style={{ left: `${currentMinutesFromStart * PIXELS_PER_MINUTE + 120}px` }}
+                />
+                {props.children}
+              </div>
+            ))
+          }}
+          itemContent={(index, stream) => {
             const streamId = stream.stream_id as number;
             const programmes = epgData[String(streamId)] || (stream.epg_channel_id ? epgData[stream.epg_channel_id] : null) || [];
 
             return (
-              <div key={streamId} className="epg-row">
+              <div className="epg-row" style={{ width: 'max-content', minWidth: '100%' }}>
                 <div className="epg-channel-cell">
                   {stream.stream_icon ? (
                     <img src={stream.stream_icon} alt={stream.name} className="epg-channel-logo" loading="lazy" onError={(e) => e.currentTarget.style.display = 'none'} />
@@ -172,8 +179,8 @@ export function EpgGrid({ accountId, streams, onPlayLive, onPlayArchive }: EpgGr
                 </div>
               </div>
             );
-          })}
-        </div>
+          }}
+        />
       </div>
     </div>
   );

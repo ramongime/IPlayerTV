@@ -2,13 +2,39 @@ import { randomUUID } from 'node:crypto';
 import type { Account } from '@iplayertv/core';
 import type { IAccountRepository } from '@iplayertv/core';
 import { getDatabase } from './DatabaseConnection';
+import { safeStorage } from 'electron';
+
+function encryptPassword(text: string): string {
+  if (text && safeStorage && safeStorage.isEncryptionAvailable()) {
+    if (text.startsWith('ENCRYPTED:')) return text;
+    return 'ENCRYPTED:' + safeStorage.encryptString(text).toString('base64');
+  }
+  return text;
+}
+
+function decryptPassword(text: string): string {
+  if (text && text.startsWith('ENCRYPTED:') && safeStorage && safeStorage.isEncryptionAvailable()) {
+    try {
+      return safeStorage.decryptString(Buffer.from(text.replace('ENCRYPTED:', ''), 'base64'));
+    } catch {
+      return text;
+    }
+  }
+  return text;
+}
+
+function mapAccount(account: Account): Account {
+  if (!account) return account;
+  return { ...account, password: decryptPassword(account.password) };
+}
 
 // better-sqlite3 is synchronous; methods are async only to satisfy the shared
 // IAccountRepository contract (the mobile SQLite implementation is truly async).
 export class AccountRepository implements IAccountRepository {
   async list(): Promise<Account[]> {
     const db = getDatabase();
-    return db.prepare('SELECT * FROM accounts ORDER BY createdAt DESC').all() as Account[];
+    const accounts = db.prepare('SELECT * FROM accounts ORDER BY createdAt DESC').all() as Account[];
+    return accounts.map(mapAccount);
   }
 
   async create(payload: Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player'>): Promise<Account> {
@@ -23,13 +49,14 @@ export class AccountRepository implements IAccountRepository {
 
     const account = {
       ...payload,
+      password: encryptPassword(payload.password),
       id,
       createdAt: now,
       updatedAt: now
     };
 
     stmt.run(account);
-    return account as Account;
+    return mapAccount(account as Account);
   }
 
   async update(id: string, payload: Partial<Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player' | 'userAgent'>>): Promise<Account> {
@@ -37,15 +64,23 @@ export class AccountRepository implements IAccountRepository {
     const existing = db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account | undefined;
     if (!existing) throw new Error(`Account not found: ${id}`);
 
-    const fields = Object.keys(payload).filter((key) => (payload as Record<string, unknown>)[key] !== undefined);
+    const ALLOWED_FIELDS = ['name', 'server', 'username', 'password', 'output', 'player', 'userAgent'];
+    const fields = Object.keys(payload).filter((key) => 
+      ALLOWED_FIELDS.includes(key) && (payload as Record<string, unknown>)[key] !== undefined
+    );
     if (fields.length === 0) return existing;
 
     const setClauses = fields.map((field) => `${field} = @${field}`).join(', ');
     const now = new Date().toISOString();
-    const stmt = db.prepare(`UPDATE accounts SET ${setClauses}, updatedAt = @updatedAt WHERE id = @id`);
-    stmt.run({ ...payload, updatedAt: now, id });
+    const accountPayload = { ...payload };
+    if (accountPayload.password) {
+      accountPayload.password = encryptPassword(accountPayload.password);
+    }
 
-    return db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account;
+    const stmt = db.prepare(`UPDATE accounts SET ${setClauses}, updatedAt = @updatedAt WHERE id = @id`);
+    stmt.run({ ...accountPayload, updatedAt: now, id });
+
+    return mapAccount(db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account);
   }
 
   async remove(id: string): Promise<void> {

@@ -179,7 +179,7 @@ export function DashboardPage() {
             <button className="primary-button" onClick={() => setShowAccountModal(true)}>{t('common.addAccount')}</button>
           </section>
         ) : (
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={`${activeTab}-${shelfView}-${activeCategoryId}`}
               initial={{ opacity: 0, y: 10 }}

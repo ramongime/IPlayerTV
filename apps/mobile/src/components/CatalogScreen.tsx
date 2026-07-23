@@ -69,6 +69,8 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
     [favorites, contentType]
   );
 
+  const listExtraData = useMemo(() => ({ favoriteIds, nowPlaying }), [favoriteIds, nowPlaying]);
+
   // State for the details sheet
   const [selectedStream, setSelectedStream] = useState<StreamItem | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -264,7 +266,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
             <View style={{ flex: 1, minHeight: 300, width: '100%' }}>
               <FlashList
                 data={filteredCategories}
-
+                estimatedItemSize={44}
                 keyExtractor={(item) => item.category_id}
               ListHeaderComponent={
                 <Pressable
@@ -322,6 +324,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
       ) : isGridMode ? (
         <FlashList
           data={gridItems}
+          estimatedItemSize={220}
           renderItem={renderGridItem}
           keyExtractor={(item) => String(idOf(item))}
           numColumns={2}
@@ -333,14 +336,15 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
               tintColor={colors.accent}
             />
           }
-          extraData={[favoriteIds, nowPlaying]}
+          extraData={listExtraData}
         />
       ) : (
         <FlashList
           data={filtered}
+          estimatedItemSize={68}
           renderItem={renderListItem}
           keyExtractor={(item) => String(idOf(item))}
-          extraData={[nowPlaying, favoriteIds]}
+          extraData={listExtraData}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}

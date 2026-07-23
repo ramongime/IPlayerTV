@@ -144,8 +144,9 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 32 }}>
-      <Text style={styles.heading}>{t('common.settings')}</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <Text style={styles.heading}>{t('common.settings')}</Text>
 
       <Text style={styles.sectionTitle}>{t('common.accountInfo')}</Text>
       <View style={styles.card}>
@@ -298,6 +299,7 @@ export default function SettingsScreen() {
         />
       )}
     </ScrollView>
+    </View>
   );
 }
 

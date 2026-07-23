@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useDeferredValue } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Category, Favorite, StreamItem, ContentType, ShelfView } from '@iplayertv/core';
 
@@ -23,6 +23,7 @@ export const libraryKeys = {
 };
 
 export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearchAll, search = '', shelfView = 'catalog' }: UseLibraryParams) {
+  const deferredSearch = useDeferredValue(search);
   const queryClient = useQueryClient();
 
   const baseDataQuery = useQuery({
@@ -69,17 +70,17 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
   const streams = streamsQuery.data ?? [];
 
   const filteredStreams = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
+    const normalized = deferredSearch.trim().toLowerCase();
     const base = shelfView === 'catalog'
       ? streams
       : streams.filter((stream) => favorites.some((fav) => fav.contentType === activeTab && fav.streamId === (stream.stream_id ?? stream.series_id ?? 0)));
 
     if (!normalized) return base;
     return base.filter((item) => item.name.toLowerCase().includes(normalized));
-  }, [streams, search, favorites, shelfView, activeTab]);
+  }, [streams, deferredSearch, favorites, shelfView, activeTab]);
 
   const nowPlayingQuery = useQuery({
-    queryKey: libraryKeys.nowPlaying(accountId, activeTab, categoryToLoad, enableSearchAll, search, shelfView),
+    queryKey: libraryKeys.nowPlaying(accountId, activeTab, categoryToLoad, enableSearchAll, deferredSearch, shelfView),
     queryFn: async () => {
       if (!accountId || activeTab !== 'live' || filteredStreams.length === 0) return {};
       
@@ -90,17 +91,25 @@ export function useLibrary({ accountId, activeTab, activeCategoryId, enableSearc
       if (streamsToFetch.length === 0) return {};
 
       const BATCH_SIZE = 50;
+      const CONCURRENCY = 3;
       let epgData: Record<string, any[]> = {};
       
+      const batches = [];
       for (let i = 0; i < streamsToFetch.length; i += BATCH_SIZE) {
-        const batch = streamsToFetch.slice(i, i + BATCH_SIZE);
-        const streamIdsStr = batch.map(s => s.stream_id).join(',');
-        try {
-          const batchData = await window.xtremeApi.xtream.epgTable(accountId, streamIdsStr);
-          epgData = { ...epgData, ...batchData };
-        } catch (e) {
-          console.error('Failed to fetch EPG batch', e);
-        }
+        batches.push(streamsToFetch.slice(i, i + BATCH_SIZE));
+      }
+
+      for (let i = 0; i < batches.length; i += CONCURRENCY) {
+        const currentBatches = batches.slice(i, i + CONCURRENCY);
+        await Promise.all(currentBatches.map(async (batch) => {
+          const streamIdsStr = batch.map(s => s.stream_id).join(',');
+          try {
+            const batchData = await window.xtremeApi.xtream.epgTable(accountId, streamIdsStr);
+            Object.assign(epgData, batchData);
+          } catch (e) {
+            console.error('Failed to fetch EPG batch', e);
+          }
+        }));
       }
 
       const nowPlayingMap: Record<number, string> = {};

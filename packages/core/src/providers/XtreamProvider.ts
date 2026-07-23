@@ -48,7 +48,36 @@ export class XtreamProvider implements IXtreamProvider {
       params.category_id = categoryId;
     }
 
-    return this.request<StreamItem[]>(account, params);
+    const data = await this.request<any[]>(account, params);
+    if (!Array.isArray(data)) return [];
+    
+    // Trim unused fields to reduce IPC payload size
+    return data.map(item => ({
+      num: item.num,
+      name: item.name,
+      stream_type: item.stream_type,
+      stream_id: item.stream_id,
+      stream_icon: item.stream_icon,
+      epg_channel_id: item.epg_channel_id,
+      added: item.added,
+      category_id: item.category_id,
+      custom_sid: item.custom_sid,
+      tv_archive: item.tv_archive,
+      direct_source: item.direct_source,
+      tv_archive_duration: item.tv_archive_duration,
+      rating: item.rating,
+      rating_5based: item.rating_5based,
+      container_extension: item.container_extension,
+      series_id: item.series_id,
+      cover: item.cover,
+      plot: item.plot,
+      cast: item.cast,
+      director: item.director,
+      genre: item.genre,
+      releaseDate: item.releaseDate,
+      episode_run_time: item.episode_run_time,
+      backdrop_path: item.backdrop_path
+    })) as StreamItem[];
   }
 
   async seriesEpisodes(account: Account, seriesId: number): Promise<Episode[]> {
@@ -148,23 +177,19 @@ export class XtreamProvider implements IXtreamProvider {
 
   async nowPlaying(account: Account, streamIds: number[]): Promise<NowPlayingMap> {
     const result: NowPlayingMap = {};
-    const BATCH_SIZE = 100;
+    const BATCH_SIZE = 50;
+    const CONCURRENCY = 3;
 
-    for (let i = 0; i < streamIds.length; i += BATCH_SIZE) {
-      const batch = streamIds.slice(i, i + BATCH_SIZE);
+    const fetchBatch = async (batch: number[]) => {
       const streamIdsStr = batch.join(',');
-
       try {
         const epgData = await this.getEpgTable(account, streamIdsStr);
         const currentTime = Math.floor(Date.now() / 1000);
 
         for (const [streamId, programmes] of Object.entries(epgData)) {
-          // getEpgTable also emits channel_id aliases — only numeric keys are stream ids
           const idNum = Number(streamId);
           if (!Number.isFinite(idNum)) continue;
 
-          // Only report a programme that is actually airing right now; falling
-          // back to an arbitrary entry would surface stale titles as "current".
           const now = programmes.find(prog => {
             if (prog.start_timestamp && prog.stop_timestamp) {
               return prog.start_timestamp <= currentTime && prog.stop_timestamp > currentTime;
@@ -179,6 +204,16 @@ export class XtreamProvider implements IXtreamProvider {
       } catch (err) {
         console.error('Error fetching nowPlaying batch with getEpgTable', err);
       }
+    };
+
+    const batches: number[][] = [];
+    for (let i = 0; i < streamIds.length; i += BATCH_SIZE) {
+      batches.push(streamIds.slice(i, i + BATCH_SIZE));
+    }
+
+    for (let i = 0; i < batches.length; i += CONCURRENCY) {
+      const currentBatches = batches.slice(i, i + CONCURRENCY);
+      await Promise.all(currentBatches.map(fetchBatch));
     }
 
     return result;
