@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveAccount, xtream } from '@/lib/services';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/theme';
+import { GestureVideoPlayer } from '@/components/GestureVideoPlayer';
 
 const CONTROLS_TIMEOUT = 4000;
 
@@ -142,16 +143,11 @@ export default function PlayerScreen() {
           <Text style={styles.loadingText}>{title}</Text>
         </View>
       ) : (
-        <Pressable style={styles.videoContainer} onPress={toggleControls}>
-          <VideoView
-            player={player}
-            style={styles.video}
-            contentFit="contain"
-            nativeControls={false}
-            allowsPictureInPicture
-            startsPictureInPictureAutomatically
-          />
-        </Pressable>
+        <GestureVideoPlayer
+          player={player}
+          title={title}
+          onToggleControls={toggleControls}
+        />
       )}
 
       {/* Overlay Controls */}

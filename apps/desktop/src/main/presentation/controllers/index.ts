@@ -14,6 +14,7 @@ import { registerPlayerIPC } from './PlayerController';
 import { registerSettingsIPC } from './SettingsController';
 import { registerBackupIPC } from './BackupController';
 import { registerWindowIPC } from './WindowController';
+import { registerSearchIPC } from './SearchController';
 
 export function registerControllers() {
   const settingsProvider = new SettingsProvider();
@@ -29,6 +30,7 @@ export function registerControllers() {
   registerWatchedIPC(watchedRepo);
   registerTmdbIPC(settingsProvider);
   registerXtreamIPC(accountsRepo, xtreamProvider);
+  registerSearchIPC(accountsRepo, xtreamProvider);
   registerPlayerIPC(accountsRepo, xtreamProvider, playerProvider);
   registerSettingsIPC(settingsProvider);
   registerBackupIPC(accountsRepo, settingsProvider);

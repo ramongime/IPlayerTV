@@ -9,7 +9,21 @@ export class TmdbClient {
 
   constructor(private fetchFn: FetchLike) {}
 
+  getMockInfo(name: string): TmdbInfo {
+    const cleanName = name.replace(/\(\d{4}\)/g, '').trim();
+    return {
+      posterPath: 'https://image.tmdb.org/t/p/w500/mock_poster.jpg',
+      backdropPath: 'https://image.tmdb.org/t/p/w1280/mock_backdrop.jpg',
+      overview: `Sinopse simulada para ${cleanName}`,
+      voteAverage: 8.5,
+      releaseDate: '2025-01-01'
+    };
+  }
+
   async fetchInfo(name: string, type: 'movie' | 'series', apiKey: string): Promise<TmdbInfo | null> {
+    if (process.env.TMDB_MOCK === 'true') {
+      return this.getMockInfo(name);
+    }
     if (!apiKey) return null;
 
     // Clean up the name for better search results (remove years in parenthesis, etc.)

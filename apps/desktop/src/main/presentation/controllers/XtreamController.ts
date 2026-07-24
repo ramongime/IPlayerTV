@@ -45,6 +45,10 @@ export function registerXtreamIPC(
     return xtreamProvider.authenticate(accountSchema.parse(account));
   });
 
+  ipcMain.handle('xtream:switchAccount', (_, accountId: string) => {
+    return accountsRepo.setActive(accountIdSchema.parse(accountId));
+  });
+
   ipcMain.handle('xtream:categories', async (_, accountId: string, contentType: ContentType) => {
     return xtreamProvider.categories(
       await resolveAccount(accountIdSchema.parse(accountId)),

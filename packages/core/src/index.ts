@@ -20,6 +20,7 @@ export type { IPlayerProvider } from './services/IPlayerProvider';
 // API surface & typed payloads
 export type {
   XtremeApi,
+  GlobalSearchResult,
   PlayerOpenPayload,
   PlayerResolvePayload,
   PlayerCatchupPayload,

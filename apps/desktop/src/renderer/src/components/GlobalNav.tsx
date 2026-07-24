@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { ContentType } from '@iplayertv/core';
+import type { ContentType } from '@iplayertv/core';
+import { motion } from 'framer-motion';
 import defaultLogo from '@/assets/icon.png';
 
 interface GlobalNavProps {
@@ -24,28 +25,28 @@ export function GlobalNav({ activeTab, onTabChange, onOpenSettings, logoSrc }: G
           <NavIcon 
             active={activeTab === 'live'} 
             onClick={() => onTabChange('live')}
-            title="TV Ao Vivo"
+            title={t('tabs.live', 'TV Ao Vivo')}
           >
             📺
           </NavIcon>
           <NavIcon 
             active={activeTab === 'movie'} 
             onClick={() => onTabChange('movie')}
-            title="Filmes"
+            title={t('tabs.movie', 'Filmes')}
           >
             🎬
           </NavIcon>
           <NavIcon 
             active={activeTab === 'series'} 
             onClick={() => onTabChange('series')}
-            title="Séries"
+            title={t('tabs.series', 'Séries')}
           >
             📽️
           </NavIcon>
         </div>
       </div>
       <div>
-        <NavIcon active={false} onClick={onOpenSettings} title="Configurações">
+        <NavIcon active={false} onClick={onOpenSettings} title={t('common.settings', 'Configurações')}>
           ⚙️
         </NavIcon>
       </div>
@@ -53,32 +54,41 @@ export function GlobalNav({ activeTab, onTabChange, onOpenSettings, logoSrc }: G
   );
 }
 
-function NavIcon({ active, onClick, children, title }: any) {
+function NavIcon({ active, onClick, children, title }: { active: boolean; onClick: () => void; children: React.ReactNode; title: string }) {
   return (
     <button
       onClick={onClick}
       title={title}
       style={{
+        position: 'relative',
         width: '44px',
         height: '44px',
         borderRadius: '12px',
         border: 'none',
-        backgroundColor: active ? 'rgba(76, 201, 240, 0.2)' : 'transparent',
+        backgroundColor: 'transparent',
         color: active ? '#4cc9f0' : 'rgba(255, 255, 255, 0.6)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '20px',
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
-      }}
-      onMouseOver={(e) => {
-        if (!active) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-      }}
-      onMouseOut={(e) => {
-        if (!active) e.currentTarget.style.backgroundColor = 'transparent';
+        zIndex: 1,
       }}
     >
+      {active && (
+        <motion.div
+          layoutId="activeNavPill"
+          transition={{ type: 'spring' as const, stiffness: 500, damping: 35 }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(76, 201, 240, 0.2)',
+            borderRadius: '12px',
+            border: '1px solid rgba(76, 201, 240, 0.4)',
+            zIndex: -1,
+          }}
+        />
+      )}
       {children}
     </button>
   );

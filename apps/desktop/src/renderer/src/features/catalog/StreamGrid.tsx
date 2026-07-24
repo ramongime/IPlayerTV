@@ -1,10 +1,13 @@
+import React, { useMemo } from 'react';
+import { VirtuosoGrid } from 'react-virtuoso';
+import { motion } from 'framer-motion';
 import type { Favorite, StreamItem, ContentType } from '@iplayertv/core';
 
 interface StreamGridProps {
   contentType: ContentType;
   streams: StreamItem[];
   favorites: Favorite[];
-  watched: Array<{ contentType: string, streamId: number }>;
+  watched: Array<{ contentType: string; streamId: number }>;
   nowPlaying?: Record<number, string>;
   isFavoriting?: boolean;
   onToggleFavorite: (stream: StreamItem) => void;
@@ -14,8 +17,10 @@ interface StreamGridProps {
   onAddMultiView?: (stream: StreamItem) => void;
 }
 
-import React, { useMemo } from 'react';
-import { VirtuosoGrid } from 'react-virtuoso';
+const cardVariants = {
+  hidden: { opacity: 0, y: 16, scale: 0.96 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, stiffness: 350, damping: 25 } }
+};
 
 const StreamCard = React.memo(({ 
   stream, contentType, isFavorite, isWatched, currentProgramme,
@@ -33,9 +38,18 @@ const StreamCard = React.memo(({
   onToggleFavorite: (stream: StreamItem) => void;
 }) => {
   return (
-    <article className="stream-card">
+    <motion.article
+      className="stream-card"
+      initial="hidden"
+      animate="show"
+      variants={cardVariants}
+    >
       <div className="stream-cover">
-        {stream.stream_icon || stream.cover ? <img src={stream.stream_icon || stream.cover} alt={stream.name} loading="lazy" /> : <span>{stream.name.slice(0, 1).toUpperCase()}</span>}
+        {stream.stream_icon || stream.cover ? (
+          <img src={stream.stream_icon || stream.cover} alt={stream.name} loading="lazy" onError={(e) => e.currentTarget.style.display = 'none'} />
+        ) : (
+          <span>{stream.name.slice(0, 1).toUpperCase()}</span>
+        )}
       </div>
       <div className="stream-meta">
         <h3>{stream.name}</h3>
@@ -63,7 +77,7 @@ const StreamCard = React.memo(({
         )}
         <button className="ghost-button" onClick={() => onToggleFavorite(stream)}>{isFavorite ? '★' : '☆'}</button>
       </div>
-    </article>
+    </motion.article>
   );
 });
 

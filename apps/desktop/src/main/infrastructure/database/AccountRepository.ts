@@ -23,9 +23,13 @@ function decryptPassword(text: string): string {
   return text;
 }
 
-function mapAccount(account: Account): Account {
+function mapAccount(account: any): Account {
   if (!account) return account;
-  return { ...account, password: decryptPassword(account.password) };
+  return {
+    ...account,
+    password: decryptPassword(account.password),
+    isActive: Boolean(account.isActive)
+  };
 }
 
 // better-sqlite3 is synchronous; methods are async only to satisfy the shared
@@ -35,6 +39,28 @@ export class AccountRepository implements IAccountRepository {
     const db = getDatabase();
     const accounts = db.prepare('SELECT * FROM accounts ORDER BY createdAt DESC').all() as Account[];
     return accounts.map(mapAccount);
+  }
+
+  async getActive(): Promise<Account | null> {
+    const db = getDatabase();
+    const active = db.prepare('SELECT * FROM accounts WHERE isActive = 1 LIMIT 1').get() as Account | undefined;
+    if (active) return mapAccount(active);
+    const fallback = db.prepare('SELECT * FROM accounts ORDER BY createdAt DESC LIMIT 1').get() as Account | undefined;
+    if (fallback) return mapAccount(fallback);
+    return null;
+  }
+
+  async setActive(id: string): Promise<Account> {
+    const db = getDatabase();
+    const updateTx = db.transaction(() => {
+      const existing = db.prepare('SELECT 1 FROM accounts WHERE id = ?').get(id);
+      if (!existing) throw new Error(`Account not found: ${id}`);
+      db.prepare('UPDATE accounts SET isActive = 0').run();
+      db.prepare('UPDATE accounts SET isActive = 1, updatedAt = ? WHERE id = ?').run(new Date().toISOString(), id);
+    });
+    updateTx();
+    const updated = db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as Account;
+    return mapAccount(updated);
   }
 
   async create(payload: Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player'>): Promise<Account> {

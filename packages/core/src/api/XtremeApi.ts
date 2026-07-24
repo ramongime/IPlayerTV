@@ -51,12 +51,24 @@ export interface AccountInfoResponse {
   serverTimezone: string;
 }
 
+export interface GlobalSearchResult {
+  live: StreamItem[];
+  movie: StreamItem[];
+  series: StreamItem[];
+  total: number;
+}
+
 // Shape of the client-facing API surface. On desktop it is implemented by the
 // Electron preload bridge (window.xtremeApi → ipcRenderer.invoke); on mobile it
 // is implemented in-process by wiring the core providers/repositories directly.
 export interface XtremeApi {
+  search: {
+    globalSearch: (accountId: string, query: string) => Promise<GlobalSearchResult>;
+  };
   accounts: {
     list: () => Promise<Account[]>;
+    getActive: () => Promise<Account | null>;
+    setActive: (id: string) => Promise<Account>;
     create: (payload: AccountInput) => Promise<Account>;
     update: (id: string, payload: AccountUpdateInput) => Promise<Account>;
     remove: (id: string) => Promise<void>;
@@ -69,10 +81,13 @@ export interface XtremeApi {
     epg: (accountId: string, streamId: number, limit?: number) => Promise<EpgProgramme[]>;
     epgTable: (accountId: string, streamIds: string) => Promise<Record<string, EpgProgramme[]>>;
     nowPlaying: (accountId: string, streamIds: number[]) => Promise<NowPlayingMap>;
+    switchAccount?: (accountId: string) => Promise<Account>;
   };
   favorites: {
     list: (accountId: string) => Promise<Favorite[]>;
     toggle: (payload: FavoriteTogglePayload) => Promise<{ favorite: boolean }>;
+    syncFavorites?: (accountId: string, favorites: FavoriteTogglePayload[]) => Promise<Favorite[]>;
+    sync?: (accountId: string, favorites: FavoriteTogglePayload[]) => Promise<Favorite[]>;
   };
   watched: {
     list: (accountId: string) => Promise<Array<{ contentType: ContentType; streamId: number }>>;
@@ -81,6 +96,7 @@ export interface XtremeApi {
   };
   tmdb: {
     fetchInfo: (name: string, type: 'movie' | 'series') => Promise<TmdbInfo | undefined>;
+    getMetadata?: (type: 'movie' | 'series', tmdbIdOrTitle: string) => Promise<TmdbInfo | undefined>;
   };
   player: {
     open: (payload: PlayerOpenPayload) => Promise<{ method: string; url: string }>;

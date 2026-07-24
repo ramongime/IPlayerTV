@@ -27,6 +27,8 @@ export function registerAccountsIPC(
   };
 
   ipcMain.handle('accounts:list', () => accountsRepo.list());
+  ipcMain.handle('accounts:getActive', () => accountsRepo.getActive());
+  ipcMain.handle('accounts:setActive', (_, id: string) => accountsRepo.setActive(id));
 
   ipcMain.handle('accounts:create', async (_, payload) => {
     let input;

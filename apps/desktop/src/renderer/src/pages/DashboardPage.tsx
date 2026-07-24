@@ -12,7 +12,8 @@ import { StreamGrid } from '@/features/catalog/StreamGrid';
 import { TopBar } from '@/features/catalog/TopBar';
 import { HeroBanner } from '@/features/catalog/HeroBanner';
 import { GlobalNav } from '@/components/GlobalNav';
-import type { Account, ShelfView, StreamItem } from '@iplayertv/core';
+import { GlobalSearchModal } from '@/features/catalog/GlobalSearchModal';
+import type { Account, ContentType, ShelfView, StreamItem } from '@iplayertv/core';
 import { useAppStore } from '@/store/useAppStore';
 import { useLibrary } from '@/features/catalog/hooks/useLibrary';
 import { usePlayer } from '@/features/player/hooks/usePlayer';
@@ -37,6 +38,7 @@ export function DashboardPage() {
   const hiddenCategories = useAppStore(state => state.hiddenCategories);
   const toggleHiddenCategory = useAppStore(state => state.toggleHiddenCategory);
   const loadHiddenCategories = useAppStore(state => state.loadHiddenCategories);
+  const setSearchModalOpen = useAppStore(state => state.setSearchModalOpen);
 
   // Local UI State
   const [activeCategoryId, setActiveCategoryId] = useState('all');
@@ -116,6 +118,7 @@ export function DashboardPage() {
       setShowInspectModal(false);
       setEditingAccount(undefined);
       setInternalPlayerUrl(undefined);
+      setSearchModalOpen(false);
     }
   });
 
@@ -179,13 +182,13 @@ export function DashboardPage() {
             <button className="primary-button" onClick={() => setShowAccountModal(true)}>{t('common.addAccount')}</button>
           </section>
         ) : (
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             <motion.div
               key={`${activeTab}-${shelfView}-${activeCategoryId}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, y: 12, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.99 }}
+              transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
               style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '18px' }}
             >
               {featuredStream && (
@@ -288,6 +291,27 @@ export function DashboardPage() {
           </AnimatePresence>
         )}
       </main>
+
+      <GlobalSearchModal
+        onPlayStream={async (stream, type) => {
+          if (type !== activeTab) {
+            setActiveTab(type as ContentType);
+          }
+          if (type === 'series') {
+            setSelectedStream(stream);
+            setShowInspectModal(true);
+          } else {
+            await playItem(stream);
+          }
+        }}
+        onInspectStream={(stream, type) => {
+          if (type !== activeTab) {
+            setActiveTab(type as ContentType);
+          }
+          setSelectedStream(stream);
+          setShowInspectModal(true);
+        }}
+      />
 
       <AccountModal
         open={showAccountModal}

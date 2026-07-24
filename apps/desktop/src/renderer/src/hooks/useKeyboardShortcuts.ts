@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { ShelfView, ContentType } from '@iplayertv/core';
+import { useAppStore } from '@/store/useAppStore';
 
 interface UseKeyboardShortcutsParams {
   shelfView: ShelfView;
@@ -14,9 +15,15 @@ export function useKeyboardShortcuts({ shelfView, setShelfView, setActiveTab, cl
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
 
-      if (e.key === '/' || (e.metaKey && e.key === 'k') || (e.ctrlKey && e.key === 'k')) {
+      if ((e.metaKey && e.key === 'k') || (e.ctrlKey && e.key === 'k')) {
         e.preventDefault();
-        document.querySelector<HTMLInputElement>('.search-input')?.focus();
+        useAppStore.getState().setSearchModalOpen(true);
+        return;
+      }
+      if (e.key === '/') {
+        e.preventDefault();
+        useAppStore.getState().setSearchModalOpen(true);
+        return;
       }
       if (e.key === '1') setActiveTab('live');
       if (e.key === '2') setActiveTab('movie');

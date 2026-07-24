@@ -27,6 +27,7 @@ export interface Account {
   output: 'm3u8' | 'ts';
   player: 'vlc' | 'mpv' | 'browser' | 'internal';
   userAgent?: string;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }

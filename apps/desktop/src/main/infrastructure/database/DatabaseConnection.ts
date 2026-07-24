@@ -54,10 +54,23 @@ const MIGRATIONS: ((database: Database.Database) => void)[] = [
         PRIMARY KEY (accountId, contentType, streamId)
       );
     `);
+  },
+  // v2 — Multi-Account active flag & index optimizations
+  (database) => {
+    database.exec(`
+      ALTER TABLE accounts ADD COLUMN isActive INTEGER NOT NULL DEFAULT 0;
+      CREATE INDEX IF NOT EXISTS idx_accounts_active ON accounts(isActive);
+      CREATE INDEX IF NOT EXISTS idx_favorites_account ON favorites(accountId);
+    `);
   }
 ];
 
-function migrate(database: Database.Database) {
+export function setDatabase(customDb: Database.Database) {
+  db = customDb;
+  migrate(db);
+}
+
+export function migrate(database: Database.Database) {
   const current = database.pragma('user_version', { simple: true }) as number;
   for (let version = current; version < MIGRATIONS.length; version++) {
     const run = database.transaction(() => {

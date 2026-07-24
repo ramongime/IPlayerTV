@@ -1,4 +1,9 @@
-import * as SQLite from 'expo-sqlite';
+import type * as SQLiteTypes from 'expo-sqlite';
+
+let SQLite: typeof SQLiteTypes | null = null;
+try {
+  SQLite = require('expo-sqlite');
+} catch {}
 
 // Connection-level PRAGMAs (must run outside a transaction).
 const PRAGMAS = `
@@ -45,9 +50,38 @@ const MIGRATIONS: string[] = [
     PRIMARY KEY (accountId, contentType, streamId)
   );
   `,
+  // v2 — Multi-Account active flag & index optimizations
+  `
+  ALTER TABLE accounts ADD COLUMN isActive INTEGER NOT NULL DEFAULT 0;
+  CREATE INDEX IF NOT EXISTS idx_accounts_active ON accounts(isActive);
+  CREATE INDEX IF NOT EXISTS idx_favorites_account ON favorites(accountId);
+  `,
+  // v3 — downloads table for offline VOD media downloads
+  `
+  CREATE TABLE IF NOT EXISTS downloads (
+    id TEXT PRIMARY KEY,
+    accountId TEXT NOT NULL,
+    contentType TEXT NOT NULL,
+    streamId INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    localUri TEXT NOT NULL,
+    remoteUrl TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('QUEUED', 'DOWNLOADING', 'PAUSED', 'COMPLETED', 'FAILED', 'CANCELLED')),
+    downloadedBytes INTEGER NOT NULL DEFAULT 0,
+    totalBytes INTEGER NOT NULL DEFAULT 0,
+    pauseStateJson TEXT,
+    errorMessage TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL,
+    FOREIGN KEY (accountId) REFERENCES accounts(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_downloads_account ON downloads(accountId);
+  CREATE INDEX IF NOT EXISTS idx_downloads_status ON downloads(status);
+  `,
 ];
 
-async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
+async function migrate(db: SQLiteTypes.SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const current = row?.user_version ?? 0;
   for (let version = current; version < MIGRATIONS.length; version++) {
@@ -60,10 +94,13 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
   }
 }
 
-let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+let dbPromise: Promise<SQLiteTypes.SQLiteDatabase> | null = null;
 
-export function getDatabase(): Promise<SQLite.SQLiteDatabase> {
+export function getDatabase(): Promise<SQLiteTypes.SQLiteDatabase> {
   if (!dbPromise) {
+    if (!SQLite) {
+      throw new Error('expo-sqlite is unavailable in current runtime');
+    }
     dbPromise = SQLite.openDatabaseAsync('iplayertv.db').then(async (db) => {
       await db.execAsync(PRAGMAS);
       await migrate(db);

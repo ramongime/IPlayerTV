@@ -31,4 +31,31 @@ export class FavoriteRepository implements IFavoriteRepository {
 
     return true;
   }
+
+  async syncFavorites(
+    accountId: string,
+    favorites: Array<Pick<Favorite, 'contentType' | 'streamId' | 'name' | 'icon'>>
+  ): Promise<Favorite[]> {
+    const db = getDatabase();
+    const syncTx = db.transaction(() => {
+      db.prepare('DELETE FROM favorites WHERE accountId = ?').run(accountId);
+      const insertStmt = db.prepare(`
+        INSERT INTO favorites (accountId, contentType, streamId, name, icon, createdAt)
+        VALUES (@accountId, @contentType, @streamId, @name, @icon, @createdAt)
+      `);
+      const now = new Date().toISOString();
+      for (const item of favorites) {
+        insertStmt.run({
+          accountId,
+          contentType: item.contentType,
+          streamId: item.streamId,
+          name: item.name,
+          icon: item.icon || null,
+          createdAt: now
+        });
+      }
+    });
+    syncTx();
+    return this.list(accountId);
+  }
 }

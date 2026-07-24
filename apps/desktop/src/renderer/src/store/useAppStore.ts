@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Account, ContentType } from '@iplayertv/core';
 
+export type SearchDomainFilter = 'all' | 'live' | 'movie' | 'series';
+
 interface AppState {
   accounts: Account[];
   activeAccountId?: string;
@@ -20,6 +22,15 @@ interface AppState {
   hiddenCategories: Set<string>;
   toggleHiddenCategory: (categoryId: string) => void;
   loadHiddenCategories: (accountId: string, tab: ContentType) => void;
+
+  // Unified Global Search state
+  isSearchModalOpen: boolean;
+  searchDomainFilter: SearchDomainFilter;
+  recentSearches: string[];
+  setSearchModalOpen: (open: boolean) => void;
+  setSearchDomainFilter: (filter: SearchDomainFilter) => void;
+  addRecentSearch: (query: string) => void;
+  clearRecentSearches: () => void;
 }
 
 function getHiddenKey(accountId: string, tab: ContentType) {
@@ -64,7 +75,20 @@ export const useAppStore = create<AppState>()(
         } catch {
           return { hiddenCategories: new Set() };
         }
-      })
+      }),
+
+      // Unified Global Search implementations
+      isSearchModalOpen: false,
+      searchDomainFilter: 'all',
+      recentSearches: [],
+      setSearchModalOpen: (isSearchModalOpen) => set({ isSearchModalOpen }),
+      setSearchDomainFilter: (searchDomainFilter) => set({ searchDomainFilter }),
+      addRecentSearch: (query) => set((state) => {
+        const trimmed = query.trim();
+        if (!trimmed || state.recentSearches.includes(trimmed)) return state;
+        return { recentSearches: [trimmed, ...state.recentSearches.slice(0, 9)] };
+      }),
+      clearRecentSearches: () => set({ recentSearches: [] }),
     }),
     {
       name: 'iplayertv-desktop',
@@ -72,6 +96,7 @@ export const useAppStore = create<AppState>()(
         activeAccountId: state.activeAccountId,
         activeTab: state.activeTab,
         enableSearchAll: state.enableSearchAll,
+        recentSearches: state.recentSearches,
       }),
     }
   )
