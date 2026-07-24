@@ -296,17 +296,21 @@ export function DashboardPage() {
         onPlayStream={async (stream, type) => {
           if (type !== activeTab) {
             setActiveTab(type as ContentType);
+            setActiveCategoryId('all');
+            setShelfView('catalog');
           }
           if (type === 'series') {
             setSelectedStream(stream);
             setShowInspectModal(true);
           } else {
-            await playItem(stream);
+            await playItem(stream, { contentType: type as ContentType });
           }
         }}
         onInspectStream={(stream, type) => {
           if (type !== activeTab) {
             setActiveTab(type as ContentType);
+            setActiveCategoryId('all');
+            setShelfView('catalog');
           }
           setSelectedStream(stream);
           setShowInspectModal(true);

@@ -61,6 +61,24 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
     })
   );
 
+  const [downloadTask, setDownloadTask] = useState<DownloadTaskRecord | null>(null);
+
+  // Poll or subscribe to download status
+  React.useEffect(() => {
+    if (!item || !accountId || (contentType !== 'movie' && contentType !== 'series')) return;
+    const streamId = item.stream_id ?? item.series_id;
+    const downloadId = `${accountId}_${contentType}_${streamId}`;
+    
+    DownloadManager.getDownloadById(downloadId).then(setDownloadTask);
+    
+    const unsub = DownloadManager.subscribe((tasks) => {
+      const task = tasks.find(t => t.id === downloadId);
+      if (task) setDownloadTask(task);
+      else setDownloadTask(null);
+    });
+    return unsub;
+  }, [item, accountId, contentType]);
+
   if (!item) return null;
 
   const cover = tmdbQuery.data?.posterPath || item.cover || item.stream_icon;
@@ -89,24 +107,6 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
       });
     }
   };
-
-  const [downloadTask, setDownloadTask] = useState<DownloadTaskRecord | null>(null);
-
-  // Poll or subscribe to download status
-  React.useEffect(() => {
-    if (!item || !accountId || (contentType !== 'movie' && contentType !== 'series')) return;
-    const streamId = item.stream_id ?? item.series_id;
-    const downloadId = `${accountId}_${contentType}_${streamId}`;
-    
-    DownloadManager.getDownloadById(downloadId).then(setDownloadTask);
-    
-    const unsub = DownloadManager.subscribe((tasks) => {
-      const task = tasks.find(t => t.id === downloadId);
-      if (task) setDownloadTask(task);
-      else setDownloadTask(null);
-    });
-    return unsub;
-  }, [item, accountId, contentType]);
 
   const handleDownload = async () => {
     if (downloadTask) {

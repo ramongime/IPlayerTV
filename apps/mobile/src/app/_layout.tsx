@@ -21,12 +21,15 @@ const queryClient = new QueryClient({
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { DownloadManager } from '@/lib/DownloadManager';
+
 export default function RootLayout() {
   const hasHydrated = useAppStore((s) => s.hasHydrated);
 
   useEffect(() => {
     if (hasHydrated) {
       SplashScreen.hideAsync();
+      DownloadManager.init();
     }
   }, [hasHydrated]);
 
@@ -40,6 +43,7 @@ export default function RootLayout() {
               headerStyle: { backgroundColor: colors.background },
               headerTintColor: colors.text,
               contentStyle: { backgroundColor: colors.background },
+              headerBackTitle: 'Voltar',
             }}
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

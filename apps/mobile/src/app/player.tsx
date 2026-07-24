@@ -209,13 +209,20 @@ export default function PlayerScreen() {
   );
 }
 
-// --- VOD Controls Component ---
+// --- VODControls Component ---
 function VODControls({ player, bottom }: { player: any; bottom: number }) {
-  const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const [time, setTime] = useState(player?.currentTime || 0);
+  const [duration, setDuration] = useState(player?.duration || 0);
+  const [playing, setPlaying] = useState(player?.playing ?? true);
+  const [barWidth, setBarWidth] = useState(0);
 
   useEffect(() => {
+    // Initial sync just in case
+    if (player) {
+      setTime(player.currentTime || 0);
+      setDuration(player.duration || 0);
+      setPlaying(player.playing);
+    }
     const interval = setInterval(() => {
       if (player) {
         setTime(player.currentTime || 0);
@@ -245,9 +252,22 @@ function VODControls({ player, bottom }: { player: any; bottom: number }) {
       
       <Text style={styles.timeText}>{format(time)}</Text>
       
-      <View style={styles.progressBarContainer}>
+      <Pressable 
+        style={styles.progressBarContainer}
+        onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
+        onPress={(e) => {
+          if (player && duration > 0 && barWidth > 0) {
+            const { locationX } = e.nativeEvent;
+            const newTime = (locationX / barWidth) * duration;
+            try {
+              player.currentTime = newTime;
+              setTime(newTime);
+            } catch (err) {}
+          }
+        }}
+      >
         <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
-      </View>
+      </Pressable>
       
       <Text style={styles.timeText}>{format(duration)}</Text>
     </View>

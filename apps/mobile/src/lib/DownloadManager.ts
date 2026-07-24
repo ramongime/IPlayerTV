@@ -62,6 +62,20 @@ export class DownloadService {
     };
   }
 
+  public async init(): Promise<void> {
+    try {
+      const db = await this.getDb();
+      // Recover tasks that were stuck in DOWNLOADING or QUEUED state when the app was closed
+      await db.runAsync(
+        'UPDATE downloads SET status = "PAUSED", updatedAt = ? WHERE status IN ("DOWNLOADING", "QUEUED")',
+        [new Date().toISOString()]
+      );
+      this.notifyListeners();
+    } catch (e) {
+      console.warn('Failed to init DownloadManager', e);
+    }
+  }
+
   private async notifyListeners(): Promise<void> {
     if (this.listeners.size === 0) return;
     try {

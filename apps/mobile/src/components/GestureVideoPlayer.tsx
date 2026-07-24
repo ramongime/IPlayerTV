@@ -139,8 +139,8 @@ export const GestureVideoPlayer = forwardRef<GestureVideoPlayerRef, GestureVideo
   const verticalPan = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetY([-10, 10])
-        .failOffsetX([-15, 15])
+        .activeOffsetY([-30, 30])
+        .failOffsetX([-30, 30])
         .onBegin((e) => {
           'worklet';
           startY.value = e.y;
@@ -175,12 +175,13 @@ export const GestureVideoPlayer = forwardRef<GestureVideoPlayerRef, GestureVideo
   const horizontalPan = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX([-10, 10])
-        .failOffsetY([-15, 15])
-        .onBegin(() => {
+        .activeOffsetX([-30, 30])
+        .failOffsetY([-30, 30])
+        .onStart(() => {
           'worklet';
           seekHUDVisible.value = 1;
           isScrubbing.value = 1;
+          seekOffsetSeconds.value = 0;
         })
         .onUpdate((e) => {
           'worklet';

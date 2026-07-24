@@ -250,7 +250,7 @@ export function InternalPlayer({ streamUrl, title, contentType, streamId, accoun
           <div
             style={{
               position: 'absolute',
-              bottom: '52px',
+              bottom: '85px',
               right: '16px',
               display: 'flex',
               gap: '6px',
