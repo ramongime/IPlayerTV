@@ -33,7 +33,7 @@ export function GlobalSearchModal({ onPlayStream, onInspectStream }: GlobalSearc
       if (inputQuery.trim().length >= 2) {
         addRecentSearch(inputQuery);
       }
-    }, 200);
+    }, 300);
     return () => clearTimeout(timer);
   }, [inputQuery, addRecentSearch]);
 

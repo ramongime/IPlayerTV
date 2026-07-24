@@ -19,6 +19,8 @@ const queryClient = new QueryClient({
   },
 });
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 export default function RootLayout() {
   const hasHydrated = useAppStore((s) => s.hasHydrated);
 
@@ -29,23 +31,25 @@ export default function RootLayout() {
   }, [hasHydrated]);
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.text,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ title: 'Conta Xtream' }} />
-          <Stack.Screen name="series/[id]" options={{ title: '' }} />
-          <Stack.Screen name="player" options={{ headerShown: false, orientation: 'all' }} />
-        </Stack>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.text,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="login" options={{ title: 'Conta Xtream' }} />
+            <Stack.Screen name="series/[id]" options={{ title: '' }} />
+            <Stack.Screen name="player" options={{ headerShown: false, orientation: 'all' }} />
+          </Stack>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
 

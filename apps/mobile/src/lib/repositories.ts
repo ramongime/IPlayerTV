@@ -16,6 +16,18 @@ export class AccountRepository implements IAccountRepository {
     return db.getAllAsync<Account>('SELECT * FROM accounts ORDER BY createdAt DESC');
   }
 
+  async getActive(): Promise<Account | null> {
+    const db = await getDatabase();
+    return db.getFirstAsync<Account>('SELECT * FROM accounts WHERE isActive = 1 LIMIT 1');
+  }
+
+  async setActive(id: string): Promise<Account> {
+    const db = await getDatabase();
+    await db.runAsync('UPDATE accounts SET isActive = 0');
+    await db.runAsync('UPDATE accounts SET isActive = 1 WHERE id = ?', [id]);
+    return (await db.getFirstAsync<Account>('SELECT * FROM accounts WHERE id = ?', [id]))!;
+  }
+
   async create(payload: Pick<Account, 'name' | 'server' | 'username' | 'password' | 'output' | 'player'>): Promise<Account> {
     const db = await getDatabase();
     const now = new Date().toISOString();
@@ -55,6 +67,21 @@ export class FavoriteRepository implements IFavoriteRepository {
   async list(accountId: string): Promise<Favorite[]> {
     const db = await getDatabase();
     return db.getAllAsync<Favorite>('SELECT * FROM favorites WHERE accountId = ? ORDER BY createdAt DESC', [accountId]);
+  }
+
+  async syncFavorites(accountId: string, favorites: Pick<Favorite, 'contentType' | 'streamId' | 'name' | 'icon'>[]): Promise<Favorite[]> {
+    const db = await getDatabase();
+    await db.withTransactionAsync(async () => {
+      await db.runAsync('DELETE FROM favorites WHERE accountId = ?', [accountId]);
+      const now = new Date().toISOString();
+      for (const fav of favorites) {
+        await db.runAsync(
+          'INSERT INTO favorites (accountId, contentType, streamId, name, icon, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+          [accountId, fav.contentType, fav.streamId, fav.name, fav.icon ?? null, now]
+        );
+      }
+    });
+    return this.list(accountId);
   }
 
   async toggle(payload: Pick<Favorite, 'accountId' | 'contentType' | 'streamId' | 'name' | 'icon'>): Promise<boolean> {

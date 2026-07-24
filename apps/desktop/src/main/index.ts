@@ -3,6 +3,8 @@ import path from 'path';
 import { registerControllers } from './presentation/controllers';
 import { autoUpdater } from 'electron-updater';
 
+app.commandLine.appendSwitch('enable-features', 'CastMediaRouteProvider');
+
 function createWindow() {
   const window = new BrowserWindow({
     width: 1440,
@@ -15,8 +17,18 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false // Necessário para burlar CORS em servidores Xtream/M3U no player HLS
+      webSecurity: false
     }
+  });
+
+  const { session } = window.webContents;
+  session.webRequest.onHeadersReceived((details, callback) => {
+    const { responseHeaders } = details;
+    if (responseHeaders) {
+      responseHeaders['Access-Control-Allow-Origin'] = ['*'];
+      responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, OPTIONS'];
+    }
+    callback({ responseHeaders });
   });
 
   const devServerUrl = 'http://localhost:5173';

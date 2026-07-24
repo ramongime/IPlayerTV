@@ -1,6 +1,6 @@
-import * as FileSystem from './fileSystem.ts';
-import * as SecureStore from './secureStore.ts';
-import { getDatabase } from './db.ts';
+import * as FileSystem from './fileSystem';
+import * as SecureStore from './secureStore';
+import { getDatabase } from './db';
 
 export type DownloadStatus =
   | 'QUEUED'

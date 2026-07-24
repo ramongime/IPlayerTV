@@ -1,5 +1,5 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, PanResponder } from 'react-native';
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import { tmdbKeys, epgKeys } from '@/lib/queryKeys';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DownloadManager, type DownloadTaskRecord } from '@/lib/DownloadManager';
 
 interface StreamDetailSheetProps {
   visible: boolean;
@@ -87,6 +88,54 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
         },
       });
     }
+  };
+
+  const [downloadTask, setDownloadTask] = useState<DownloadTaskRecord | null>(null);
+
+  // Poll or subscribe to download status
+  React.useEffect(() => {
+    if (!item || !accountId || (contentType !== 'movie' && contentType !== 'series')) return;
+    const streamId = item.stream_id ?? item.series_id;
+    const downloadId = `${accountId}_${contentType}_${streamId}`;
+    
+    DownloadManager.getDownloadById(downloadId).then(setDownloadTask);
+    
+    const unsub = DownloadManager.subscribe((tasks) => {
+      const task = tasks.find(t => t.id === downloadId);
+      if (task) setDownloadTask(task);
+      else setDownloadTask(null);
+    });
+    return unsub;
+  }, [item, accountId, contentType]);
+
+  const handleDownload = async () => {
+    if (downloadTask) {
+      onClose();
+      router.push('/downloads' as any);
+      return;
+    }
+    
+    const streamId = item.stream_id ?? item.series_id;
+    const downloadId = `${accountId}_${contentType}_${streamId}`;
+    const account = await resolveAccount(accountId!);
+    const url = await xtream.resolveBestStreamUrl(
+      account,
+      contentType,
+      Number(streamId),
+      item.container_extension || undefined,
+      false
+    );
+
+    await DownloadManager.enqueueDownload({
+      id: downloadId,
+      accountId: accountId!,
+      contentType: contentType as 'movie' | 'series',
+      streamId: Number(streamId),
+      title: item.name,
+      remoteUrl: url,
+      extension: item.container_extension || 'mp4',
+    });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const epg = epgQuery.data ?? [];
@@ -197,11 +246,31 @@ export function StreamDetailSheet({ visible, item, contentType, accountId, onClo
             </View>
 
             <View style={styles.content}>
-              <Pressable style={styles.playBtn} onPress={handlePlay}>
-                <Text style={styles.playBtnText}>
-                  ▶ {contentType === 'series' ? t('common.moreInfo') : t('common.playNow')}
-                </Text>
-              </Pressable>
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+                <Pressable style={[styles.playBtn, { flex: 1, marginBottom: 0 }]} onPress={handlePlay}>
+                  <Text style={styles.playBtnText}>
+                    ▶ {contentType === 'series' ? t('common.moreInfo') : t('common.playNow')}
+                  </Text>
+                </Pressable>
+
+                {(contentType === 'movie' || contentType === 'series') && (
+                  <Pressable 
+                    style={[
+                      styles.playBtn, 
+                      { 
+                        flex: 1, 
+                        marginBottom: 0, 
+                        backgroundColor: downloadTask?.status === 'COMPLETED' ? '#10b981' : colors.surfaceHighlight 
+                      }
+                    ]} 
+                    onPress={handleDownload}
+                  >
+                    <Text style={styles.playBtnText}>
+                      {downloadTask ? '⏬ ' + t('downloads.manage', 'Gerenciar') : '⬇️ ' + t('common.download', 'Baixar')}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
 
               {plot ? <Text style={styles.plot}>{plot}</Text> : null}
 

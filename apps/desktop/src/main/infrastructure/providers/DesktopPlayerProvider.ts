@@ -29,16 +29,36 @@ export class DesktopPlayerProvider implements IPlayerProvider {
 
     const platform = os.platform();
     let args: string[] = [];
+    
+    // Create a secure temporary playlist to hide credentials from CLI args (Task Phase 2)
+    const { app } = require('electron');
+    const path = require('node:path');
+    const crypto = require('node:crypto');
+    const fs = require('node:fs');
+    
+    const tempM3uPath = path.join(app.getPath('temp'), `iplayertv-${crypto.randomBytes(4).toString('hex')}.m3u`);
+    const m3uContent = `#EXTM3U\n#EXTINF:-1,${title || 'IPlayerTV Stream'}\n${url}\n`;
+    fs.writeFileSync(tempM3uPath, m3uContent, { mode: 0o600 }); // restrict file permissions
 
     if (player === 'vlc') {
       args = platform === 'darwin'
-        ? [...(title ? [`--meta-title=${title}`] : []), url]
-        : ['--one-instance', '--playlist-enqueue', ...(title ? [`--meta-title=${title}`] : []), url];
+        ? [...(title ? [`--meta-title=${title}`] : []), tempM3uPath]
+        : ['--one-instance', '--playlist-enqueue', ...(title ? [`--meta-title=${title}`] : []), tempM3uPath];
     } else {
-      args = ['--force-window=yes', ...(title ? [`--title=${title}`] : []), url];
+      args = ['--force-window=yes', ...(title ? [`--title=${title}`] : []), tempM3uPath];
     }
 
-    await execFileAsync(binaryPath, args);
+    const child = execFileAsync(binaryPath, args);
+    
+    // Attempt to cleanup the file after a short delay (enough time for player to read it)
+    setTimeout(() => {
+      try {
+        if (fs.existsSync(tempM3uPath)) fs.unlinkSync(tempM3uPath);
+      } catch (e) {
+        // ignore cleanup errors
+      }
+    }, 10000);
+
     return { method: player, url, success: true };
   }
 

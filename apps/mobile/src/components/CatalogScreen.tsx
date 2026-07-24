@@ -1,5 +1,6 @@
 import type { Category, ContentType, StreamItem } from '@iplayertv/core';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList as BaseFlashList } from '@shopify/flash-list';
+const FlashList = BaseFlashList as any;
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState, useCallback } from 'react';
@@ -265,9 +266,10 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
             />
             <View style={{ flex: 1, minHeight: 300, width: '100%' }}>
               <FlashList
+                // @ts-ignore
                 data={filteredCategories}
                 estimatedItemSize={44}
-                keyExtractor={(item) => item.category_id}
+                keyExtractor={(item: any) => item.category_id}
               ListHeaderComponent={
                 <Pressable
                   onPress={() => selectCategory(null)}
@@ -278,7 +280,7 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
                   </Text>
                 </Pressable>
               }
-              renderItem={({ item }) => (
+              renderItem={({ item }: { item: any }) => (
                 <Pressable
                   onPress={() => selectCategory(item)}
                   onLongPress={() => {
@@ -323,10 +325,11 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
         </View>
       ) : isGridMode ? (
         <FlashList
+          // @ts-ignore
           data={gridItems}
           estimatedItemSize={220}
           renderItem={renderGridItem}
-          keyExtractor={(item) => String(idOf(item))}
+          keyExtractor={(item: any) => String(idOf(item))}
           numColumns={2}
           ListHeaderComponent={ListHeader}
           refreshControl={
@@ -340,10 +343,11 @@ export function CatalogScreen({ contentType }: { contentType: ContentType }) {
         />
       ) : (
         <FlashList
+          // @ts-ignore
           data={filtered}
           estimatedItemSize={68}
           renderItem={renderListItem}
-          keyExtractor={(item) => String(idOf(item))}
+          keyExtractor={(item: any) => String(idOf(item))}
           extraData={listExtraData}
           refreshControl={
             <RefreshControl

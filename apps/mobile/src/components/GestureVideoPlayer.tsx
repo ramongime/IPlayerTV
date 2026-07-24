@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -6,8 +6,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSpring,
+  runOnJS,
 } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
 import { VideoView, type VideoPlayer } from 'expo-video';
 
 export interface GestureVideoPlayerProps {
@@ -16,8 +16,35 @@ export interface GestureVideoPlayerProps {
   onToggleControls: () => void;
 }
 
-export function GestureVideoPlayer({ player, title, onToggleControls }: GestureVideoPlayerProps) {
+export interface GestureVideoPlayerRef {
+  startPiP: () => void;
+}
+
+export const GestureVideoPlayer = forwardRef<GestureVideoPlayerRef, GestureVideoPlayerProps>(
+  ({ player, title, onToggleControls }, ref) => {
+    const videoViewRef = useRef<any>(null);
+
+    useImperativeHandle(ref, () => ({
+      startPiP: () => {
+        if (videoViewRef.current?.startPictureInPicture) {
+          videoViewRef.current.startPictureInPicture().catch(() => {});
+        }
+      }
+    }));
   const { width, height } = useWindowDimensions();
+
+  // Helper JS functions to interact with the player without capturing it in worklets
+  const jsSeek = (offset: number) => {
+    try { player.seekBy(offset); } catch {}
+  };
+
+  const jsTogglePlay = () => {
+    try { player.playing ? player.pause() : player.play(); } catch {}
+  };
+
+  const jsSetVolume = (vol: number) => {
+    try { player.volume = vol; } catch {}
+  };
 
   // Shared Values for UI HUD Overlays
   const volumeHUDVisible = useSharedValue(0);
@@ -41,7 +68,7 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
         .numberOfTaps(1)
         .onEnd(() => {
           'worklet';
-          scheduleOnRN(onToggleControls);
+          runOnJS(onToggleControls)();
         }),
     [onToggleControls]
   );
@@ -58,14 +85,10 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
             seekHUDVisible.value = withTiming(1, { duration: 150 }, () => {
               seekHUDVisible.value = withTiming(0, { duration: 600 });
             });
-            scheduleOnRN(() => {
-              try {
-                player.seekBy(-10);
-              } catch {}
-            });
+            runOnJS(jsSeek)(-10);
           }
         }),
-    [width, player]
+    [width]
   );
 
   // 3. Double Tap Right (Seek Forward +10s)
@@ -80,14 +103,10 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
             seekHUDVisible.value = withTiming(1, { duration: 150 }, () => {
               seekHUDVisible.value = withTiming(0, { duration: 600 });
             });
-            scheduleOnRN(() => {
-              try {
-                player.seekBy(10);
-              } catch {}
-            });
+            runOnJS(jsSeek)(10);
           }
         }),
-    [width, player]
+    [width]
   );
 
   // 4. Double Tap Center (Play/Pause)
@@ -98,18 +117,10 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
         .onEnd((e) => {
           'worklet';
           if (e.x >= width * 0.35 && e.x <= width * 0.65) {
-            scheduleOnRN(() => {
-              try {
-                if (player.playing) {
-                  player.pause();
-                } else {
-                  player.play();
-                }
-              } catch {}
-            });
+            runOnJS(jsTogglePlay)();
           }
         }),
-    [width, player]
+    [width]
   );
 
   // Combine Double Taps
@@ -144,11 +155,7 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
             const newVol = Math.min(1.0, Math.max(0.0, startVolume.value + deltaY));
             volumeLevel.value = newVol;
             volumeHUDVisible.value = 1;
-            scheduleOnRN(() => {
-              try {
-                player.volume = newVol;
-              } catch {}
-            });
+            runOnJS(jsSetVolume)(newVol);
           } else {
             // Left Side: Brightness
             const newBright = Math.min(1.0, Math.max(0.0, startBrightness.value + deltaY));
@@ -161,7 +168,7 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
           volumeHUDVisible.value = withTiming(0, { duration: 800 });
           brightnessHUDVisible.value = withTiming(0, { duration: 800 });
         }),
-    [height, width, player]
+    [height, width]
   );
 
   // 6. Horizontal Pan Gesture (Timeline Scrub)
@@ -184,16 +191,12 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
           'worklet';
           const offset = seekOffsetSeconds.value;
           if (offset !== 0) {
-            scheduleOnRN(() => {
-              try {
-                player.seekBy(offset);
-              } catch {}
-            });
+            runOnJS(jsSeek)(offset);
           }
           seekHUDVisible.value = withTiming(0, { duration: 800 });
           isScrubbing.value = 0;
         }),
-    [width, player]
+    [width]
   );
 
   const panGestures = useMemo(
@@ -234,6 +237,7 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
     <GestureDetector gesture={composedGestures}>
       <View style={styles.container}>
         <VideoView
+          ref={videoViewRef}
           player={player}
           style={styles.video}
           contentFit="contain"
@@ -269,7 +273,7 @@ export function GestureVideoPlayer({ player, title, onToggleControls }: GestureV
       </View>
     </GestureDetector>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },

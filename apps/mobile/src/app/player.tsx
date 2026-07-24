@@ -91,6 +91,15 @@ export default function PlayerScreen() {
     staleTime: 0,
     gcTime: 0,
     queryFn: async () => {
+      // Offline-first intercept
+      if (contentType === 'movie' || contentType === 'series') {
+        const { DownloadManager } = require('@/lib/DownloadManager');
+        const localUri = await DownloadManager.getCompletedDownloadUri(accountId!, contentType, Number(streamId));
+        if (localUri) {
+          return { url: localUri, userAgent: undefined };
+        }
+      }
+
       const account = await resolveAccount(accountId!);
       const forceExtension = contentType === 'live';
       const url = await xtream.resolveBestStreamUrl(
@@ -105,6 +114,7 @@ export default function PlayerScreen() {
   });
 
   const player = useVideoPlayer(null);
+  const gesturePlayerRef = useRef<any>(null);
 
   useEffect(() => {
     if (!urlQuery.data) return;
@@ -144,6 +154,7 @@ export default function PlayerScreen() {
         </View>
       ) : (
         <GestureVideoPlayer
+          ref={gesturePlayerRef}
           player={player}
           title={title}
           onToggleControls={toggleControls}
@@ -156,7 +167,7 @@ export default function PlayerScreen() {
           style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
           pointerEvents="box-none"
         >
-          {/* Top bar: close button + title */}
+          {/* Top bar: close button + title + PiP */}
           <View style={[styles.topBar, { top: isPortrait ? insets.top + 8 : 8 }]}>
             <Pressable
               onPress={() => {
@@ -170,20 +181,75 @@ export default function PlayerScreen() {
             </Pressable>
             {title ? (
               <Text numberOfLines={1} style={styles.title}>{title}</Text>
-            ) : null}
+            ) : <View style={{flex: 1}} />}
+            
+            <Pressable
+              onPress={() => gesturePlayerRef.current?.startPiP()}
+              style={[styles.closeButton, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+              hitSlop={12}
+            >
+              <Text style={{ fontSize: 16 }}>◱</Text>
+            </Pressable>
           </View>
 
-          {/* Bottom bar: live badge */}
-          {isLive && (
+          {/* Bottom bar: live badge or VOD controls */}
+          {isLive ? (
             <View style={[styles.bottomBar, { bottom: isPortrait ? insets.bottom + 12 : 12 }]}>
               <View style={styles.liveBadge}>
                 <Text style={styles.liveDot}>●</Text>
                 <Text style={styles.liveText}>{t('player.liveTag')}</Text>
               </View>
             </View>
+          ) : (
+            <VODControls player={player} bottom={isPortrait ? insets.bottom + 12 : 12} />
           )}
         </Animated.View>
       )}
+    </View>
+  );
+}
+
+// --- VOD Controls Component ---
+function VODControls({ player, bottom }: { player: any; bottom: number }) {
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playing, setPlaying] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (player) {
+        setTime(player.currentTime || 0);
+        setDuration(player.duration || 0);
+        setPlaying(player.playing);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [player]);
+
+  const format = (secs: number) => {
+    if (!secs || isNaN(secs)) return '00:00';
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = Math.floor(secs % 60);
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const progress = duration > 0 ? (time / duration) * 100 : 0;
+
+  return (
+    <View style={[styles.vodBottomBar, { bottom }]}>
+      <Pressable onPress={() => { playing ? player.pause() : player.play() }} style={styles.playPauseBtn} hitSlop={10}>
+        <Text style={styles.playPauseText}>{playing ? '⏸' : '▶️'}</Text>
+      </Pressable>
+      
+      <Text style={styles.timeText}>{format(time)}</Text>
+      
+      <View style={styles.progressBarContainer}>
+        <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+      </View>
+      
+      <Text style={styles.timeText}>{format(duration)}</Text>
     </View>
   );
 }
@@ -256,5 +322,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  // VOD Controls
+  vodBottomBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 11,
+    gap: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  playPauseBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playPauseText: {
+    fontSize: 20,
+    color: '#fff',
+  },
+  timeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  progressBarContainer: {
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#3b82f6',
   },
 });
